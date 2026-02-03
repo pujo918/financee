@@ -14,6 +14,44 @@ let currentView = 'monthly'; // 'monthly' or 'alltime'
 let selectedMonth = new Date().getMonth();
 let selectedYear = new Date().getFullYear();
 
+function sendToSheet(data) {
+    fetch("https://script.google.com/macros/s/AKfycbyqnT0jfZwiKwQzM4NLM-zOUEIzL_9ZlsDg4_Bg8tLk9334A_eMIfAHgHG8IHUPSwzbRA/exec", {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(data),
+        keepalive: true
+    })
+    .then(() => {
+        console.log("Data sent to spreadsheet");
+    })
+    .catch(err => {
+        console.error("Failed to send:", err);
+    });
+}
+
+function buildSheetPayload(txn) {
+    const date = txn?.date || '';
+    return {
+        action: 'add',
+        id: txn?.id || '',
+        date,
+        month: typeof date === 'string' ? date.slice(0, 7) : '',
+        type: txn?.type || '',
+        category: txn?.category || '',
+        description: txn?.description || '',
+        amount: Number(txn?.amount) || 0,
+        source: txn?.method || ''
+    };
+}
+
+function buildSheetDeletePayload(id) {
+    return {
+        action: 'delete',
+        id
+    };
+}
+
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', function() {
     loadTheme();
@@ -250,6 +288,8 @@ function handleFormSubmit(e) {
     saveTransactions();
     updateDashboards();
     renderTransactions();
+
+    sendToSheet(buildSheetPayload(transaction));
     
     this.reset();
     setTodayDate();
@@ -266,6 +306,8 @@ function deleteTransaction(id) {
         saveTransactions();
         updateDashboards();
         renderTransactions();
+
+        sendToSheet(buildSheetDeletePayload(id));
     }
 }
 
@@ -448,10 +490,13 @@ function closeConfirmModal() {
 
 function saveVoiceTransaction() {
     if (voiceTransaction && voiceTransaction.amount > 0) {
-        transactions.unshift({ id: Date.now(), ...voiceTransaction });
+        const txn = { id: Date.now(), ...voiceTransaction };
+        transactions.unshift(txn);
         saveTransactions();
         updateDashboards();
         renderTransactions();
+
+        sendToSheet(buildSheetPayload(txn));
         closeConfirmModal();
         document.getElementById('voiceResult').innerHTML = `
             <div style="background: rgba(72, 187, 120, 0.3); padding: 15px; border-radius: 8px; color: white;">
