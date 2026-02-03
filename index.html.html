@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <title>Finance Tracker - Monthly View</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>💰 Finance Tracker</h1>
+            <div class="header-actions">
+                <button class="lang-toggle" id="langToggle">🇬🇧 EN</button>
+                <button class="theme-toggle" id="themeToggle">🌙</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="quote-section">
+            <p id="dailyQuote">"Track smart, spend wise, save better!"</p>
+        </div>
+
+        <!-- Month Selector -->
+        <div class="month-selector">
+            <div class="month-selector-left">
+                <label>📅 View Period:</label>
+                <select id="monthSelect">
+                    <!-- Populated by JS -->
+                </select>
+                <select id="yearSelect">
+                    <!-- Populated by JS -->
+                </select>
+            </div>
+            <div class="view-toggle">
+                <button class="view-btn active" id="monthlyViewBtn" onclick="switchView('monthly')">📊 This Month</button>
+                <button class="view-btn" id="alltimeViewBtn" onclick="switchView('alltime')">🌍 All Time</button>
+            </div>
+        </div>
+
+        <!-- Monthly Dashboard -->
+        <div id="monthlyDashboard" class="dashboard-section">
+            <div class="section-title">
+                <span>📊 Monthly Summary</span>
+                <span class="section-badge" id="currentMonthBadge">Current Month</span>
+            </div>
+            <div class="dashboard">
+                <div class="card income-card">
+                    <div class="card-title">Income</div>
+                    <div class="card-value" id="monthlyIncome">Rp 0</div>
+                    <div class="card-subtitle">This period</div>
+                </div>
+                <div class="card expense-card">
+                    <div class="card-title">Expenses</div>
+                    <div class="card-value" id="monthlyExpense">Rp 0</div>
+                    <div class="card-subtitle">This period</div>
+                </div>
+                <div class="card net-card">
+                    <div class="card-title">Net Balance</div>
+                    <div class="card-value" id="monthlyNet">Rp 0</div>
+                    <div class="health-indicator" id="monthlyHealthIndicator">
+                        <span>🟢</span> <span>Positive flow!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- All-Time Dashboard -->
+        <div id="alltimeDashboard" class="dashboard-section hidden">
+            <div class="section-title">
+                <span>🌍 All-Time Summary</span>
+                <span class="section-badge">Complete History</span>
+            </div>
+            <div class="dashboard">
+                <div class="card income-card">
+                    <div class="card-title">Total Income</div>
+                    <div class="card-value" id="alltimeIncome">Rp 0</div>
+                    <div class="card-subtitle">All transactions</div>
+                </div>
+                <div class="card expense-card">
+                    <div class="card-title">Total Expenses</div>
+                    <div class="card-value" id="alltimeExpense">Rp 0</div>
+                    <div class="card-subtitle">All transactions</div>
+                </div>
+                <div class="card balance-card">
+                    <div class="card-title">Overall Balance</div>
+                    <div class="card-value" id="alltimeBalance">Rp 0</div>
+                    <div class="health-indicator" id="alltimeHealthIndicator">
+                        <span>🟢</span> <span>You're doing well!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Voice Input -->
+        <div class="voice-section">
+            <div class="voice-language-badge">
+                <span>🌐</span>
+                <span id="voiceLangDisplay">English + Indonesian</span>
+            </div>
+            <h2 style="margin-bottom: 10px;">🎤 Voice Input</h2>
+            <p style="margin-bottom: 20px; opacity: 0.9; font-size: 0.95rem;">
+                Speak naturally - full description captured!
+            </p>
+            <button class="voice-button" id="voiceButton">🎤</button>
+            <div class="voice-status" id="voiceStatus">Tap to start</div>
+            <div class="voice-result" id="voiceResult"></div>
+            <div class="voice-suggestions" id="voiceSuggestions">
+                <span class="voice-suggestion" data-text="I buy coffee twenty thousand">💡 "I buy coffee 20k"</span>
+                <span class="voice-suggestion" data-text="Lunch fifty thousand">💡 "Lunch 50k"</span>
+                <span class="voice-suggestion" data-text="Got three hundred k freelance">💡 "Got 300k"</span>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" data-tab="add">➕ Add</button>
+            <button class="tab" data-tab="transactions">📋 History</button>
+            <button class="tab" data-tab="analytics">📊 Analytics</button>
+            <button class="tab" data-tab="budget">💳 Budget</button>
+        </div>
+
+        <!-- Add Transaction -->
+        <div id="addTab" class="tab-content active">
+            <div class="transaction-form">
+                <h2 style="margin-bottom: 20px;">Add Transaction</h2>
+                <form id="transactionForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="type" required>
+                                <option value="expense">Expense</option>
+                                <option value="income">Income</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount (Rp)</label>
+                            <input type="number" id="amount" placeholder="50000" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="category" required>
+                                <option value="food">🍔 Food</option>
+                                <option value="transport">🚗 Transport</option>
+                                <option value="bills">💡 Bills</option>
+                                <option value="study">📚 Study</option>
+                                <option value="entertainment">🎮 Entertainment</option>
+                                <option value="shopping">🛍️ Shopping</option>
+                                <option value="health">🏥 Health</option>
+                                <option value="other">📦 Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="date" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description (Optional)</label>
+                        <textarea id="description" rows="2" placeholder="Notes"></textarea>
+                    </div>
+                    <button type="submit">Add Transaction</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Transactions -->
+        <div id="transactionsTab" class="tab-content">
+            <div class="transactions-section">
+                <h2 style="margin-bottom: 20px;">Transactions <span id="transactionsPeriod" style="color: var(--text-secondary); font-size: 0.9rem;"></span></h2>
+                <div id="transactionsList">
+                    <p style="text-align: center; color: var(--text-secondary); padding: 40px;">
+                        No transactions yet!
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics -->
+        <div id="analyticsTab" class="tab-content">
+            <div class="chart-container">
+                <h2 style="margin-bottom: 20px;">Spending by Category <span id="analyticsPeriod" style="color: var(--text-secondary); font-size: 0.9rem;"></span></h2>
+                <div id="categoryBreakdown"></div>
+            </div>
+        </div>
+
+        <!-- Budget -->
+        <div id="budgetTab" class="tab-content">
+            <div class="transaction-form">
+                <h2 style="margin-bottom: 20px;">Monthly Budget</h2>
+                <p style="margin-bottom: 20px; color: var(--text-secondary);">Set limits per category</p>
+                <div id="budgetForm"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon">✅</div>
+                <div>
+                    <h2>Confirm Transaction</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 5px;">Verify before saving</p>
+                </div>
+            </div>
+            <div class="confirm-details">
+                <div class="confirm-item">
+                    <span class="confirm-label">Type</span>
+                    <span class="confirm-value" id="confirmType"></span>
+                </div>
+                <div class="confirm-item">
+                    <span class="confirm-label">Amount</span>
+                    <span class="confirm-value" id="confirmAmount"></span>
+                </div>
+                <div class="confirm-item">
+                    <span class="confirm-label">Category</span>
+                    <span class="confirm-value" id="confirmCategory"></span>
+                </div>
+                <div class="confirm-item">
+                    <span class="confirm-label">Date</span>
+                    <span class="confirm-value" id="confirmDate"></span>
+                </div>
+                <div class="confirm-item">
+                    <span class="confirm-label">Description</span>
+                    <span class="confirm-value" id="confirmDescription"></span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-success" id="confirmSaveBtn">✓ Save</button>
+                <button class="btn-secondary" id="confirmCancelBtn">✗ Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="voice-parser.js"></script>
+    <script src="app-monthly.js"></script>
+</body>
+</html>
