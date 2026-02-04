@@ -383,7 +383,8 @@ function initVoiceRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
     recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 5;
     recognition.lang = currentLang;
 
     recognition.onstart = () => {
@@ -392,12 +393,30 @@ function initVoiceRecognition() {
     };
 
     recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const res = event.results[i];
+            const best = res && res[0] ? res[0].transcript : '';
+            if (res.isFinal) {
+                finalTranscript += best + ' ';
+            } else {
+                interimTranscript += best + ' ';
+            }
+        }
+
+        const transcript = (finalTranscript + interimTranscript).trim();
+        if (!transcript) return;
+
         document.getElementById('voiceResult').innerHTML = `
             <div style="margin-bottom: 8px;"><strong>Heard:</strong> "${transcript}"</div>
-            <div style="font-size: 0.85rem; opacity: 0.8;">Parsing...</div>
+            <div style="font-size: 0.85rem; opacity: 0.8;">${finalTranscript.trim() ? 'Parsing...' : 'Listening...'}</div>
         `;
-        setTimeout(() => parseVoiceInput(transcript), 300);
+
+        if (finalTranscript.trim()) {
+            setTimeout(() => parseVoiceInput(finalTranscript.trim()), 150);
+        }
     };
 
     recognition.onerror = (event) => {
