@@ -248,8 +248,15 @@ class BilingualParser {
     }
 
     extractAmount(text) {
+        const normalizedText = String(text)
+            .replace(/(\d)([a-zA-Z])/g, '$1 $2')
+            .replace(/([a-zA-Z])(\d)/g, '$1 $2')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        const t = normalizedText;
         const spacedGroupingPattern = /\b\d{1,3}(?:\s+\d{3})+\b/;
-        const spacedGroupingMatch = text.match(spacedGroupingPattern);
+        const spacedGroupingMatch = t.match(spacedGroupingPattern);
         if (spacedGroupingMatch) {
             const num = parseInt(spacedGroupingMatch[0].replace(/\s+/g, ''), 10);
             if (!Number.isNaN(num) && num > 0) return num;
@@ -259,7 +266,7 @@ class BilingualParser {
         let multiMatch;
         let sum = 0;
         let multiFound = false;
-        while ((multiMatch = multiMultPattern.exec(text)) !== null) {
+        while ((multiMatch = multiMultPattern.exec(t)) !== null) {
             const num = parseFloat(String(multiMatch[1]).replace(',', '.'));
             const mult = String(multiMatch[2] || '').toLowerCase();
             if (Number.isNaN(num)) continue;
@@ -268,27 +275,31 @@ class BilingualParser {
             sum += num * factor;
             multiFound = true;
         }
+
+        const fromWords = this.extractAmountFromWords(t);
+        if (fromWords > 0) {
+            if (multiFound && sum > 0) return Math.round(Math.max(sum, fromWords));
+            return fromWords;
+        }
+
         if (multiFound && sum > 0) return Math.round(sum);
 
-        const fromWords = this.extractAmountFromWords(text);
-        if (fromWords > 0) return fromWords;
-
-        const idBaseValue = this.findBestSpokenNumberMatch(text, this.spokenNumbers);
+        const idBaseValue = this.findBestSpokenNumberMatch(t, this.spokenNumbers);
         if (idBaseValue !== null) {
-            if (/\b(ribu|rb|rebu)\b/i.test(text)) return idBaseValue * 1000;
-            if (/\b(juta|jt)\b/i.test(text)) return idBaseValue * 1000000;
+            if (/\b(ribu|rb|rebu)\b/i.test(t)) return idBaseValue * 1000;
+            if (/\b(juta|jt)\b/i.test(t)) return idBaseValue * 1000000;
             if (idBaseValue >= 1000) return idBaseValue;
         }
 
-        const enBaseValue = this.findBestSpokenNumberMatch(text, this.englishNumbers);
+        const enBaseValue = this.findBestSpokenNumberMatch(t, this.englishNumbers);
         if (enBaseValue !== null) {
-            if (/\b(thousand|k)\b/i.test(text)) return enBaseValue * 1000;
-            if (/\bmillion\b/i.test(text)) return enBaseValue * 1000000;
+            if (/\b(thousand|k)\b/i.test(t)) return enBaseValue * 1000;
+            if (/\bmillion\b/i.test(t)) return enBaseValue * 1000000;
             if (enBaseValue >= 1000) return enBaseValue;
         }
 
         const multPattern = /(\d+(?:[.,]\d+)?)\s*(k|rb|ribu|rebu|thousand|juta|jt|million)/i;
-        let match = text.match(multPattern);
+        let match = t.match(multPattern);
         if (match) {
             const num = parseFloat(match[1].replace(',', '.'));
             const mult = match[2].toLowerCase();
@@ -298,14 +309,14 @@ class BilingualParser {
         }
 
         const plainPattern = /\d{1,3}(?:[.,]\d{3})+|\d{4,}/;
-        match = text.match(plainPattern);
+        match = t.match(plainPattern);
         if (match) return parseInt(match[0].replace(/[.,]/g, ''));
 
         const smallNumPattern = /\b(\d+)\b/;
-        match = text.match(smallNumPattern);
+        match = t.match(smallNumPattern);
         if (match) {
             const num = parseInt(match[1]);
-            if (num < 100 && /\b(ribu|rb|k|thousand)\b/i.test(text)) return num * 1000;
+            if (num < 100 && /\b(ribu|rb|k|thousand)\b/i.test(t)) return num * 1000;
             return num;
         }
 
@@ -419,8 +430,8 @@ class BilingualParser {
             if (t === 'sepuluh') { current += 10; seen = true; continue; }
             if (t === 'sebelas') { current += 11; seen = true; continue; }
             if (t === 'seratus') { current += 100; seen = true; continue; }
-            if (t === 'seribu') { current += 1000; seen = true; continue; }
-            if (t === 'sejuta') { current += 1000000; seen = true; continue; }
+            if (t === 'seribu') { applyScale(1000); seen = true; continue; }
+            if (t === 'sejuta') { applyScale(1000000); seen = true; continue; }
 
             if (Object.prototype.hasOwnProperty.call(unit, t)) {
                 current += unit[t];
