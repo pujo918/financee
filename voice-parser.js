@@ -181,6 +181,21 @@ class BilingualParser {
         };
     }
 
+    parseNumericToken(token) {
+        const t = String(token);
+        if (/^\d{1,3}(?:[.,]\d{3})+$/.test(t)) {
+            const num = parseInt(t.replace(/[.,]/g, ''), 10);
+            return Number.isNaN(num) ? null : num;
+        }
+
+        if (/^\d+(?:[.,]\d+)?$/.test(t)) {
+            const num = parseFloat(t.replace(',', '.'));
+            return Number.isNaN(num) ? null : num;
+        }
+
+        return null;
+    }
+
     escapeRegex(str) {
         return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
@@ -205,6 +220,19 @@ class BilingualParser {
         const suffixes = ['nya', 'in'];
         const suffixed = new RegExp('\\b' + escaped + '(?:' + suffixes.join('|') + ')?\\b', 'i');
         return suffixed.test(text);
+    }
+
+    findBestSpokenNumberMatch(text, map) {
+        const entries = Object.entries(map)
+            .sort((a, b) => b[0].length - a[0].length);
+
+        for (const [spoken, value] of entries) {
+            const escaped = this.escapeRegex(spoken).replace(/\s+/g, '\\s+');
+            const re = new RegExp('\\b' + escaped + '\\b', 'i');
+            if (re.test(text)) return value;
+        }
+
+        return null;
     }
 
     parse(text) {
@@ -245,20 +273,18 @@ class BilingualParser {
         const fromWords = this.extractAmountFromWords(text);
         if (fromWords > 0) return fromWords;
 
-        for (const [spoken, baseValue] of Object.entries(this.spokenNumbers)) {
-            if (text.includes(spoken)) {
-                if (text.includes('ribu') || text.includes('rb')) return baseValue * 1000;
-                if (text.includes('juta') || text.includes('jt')) return baseValue * 1000000;
-                if (baseValue >= 1000) return baseValue;
-            }
+        const idBaseValue = this.findBestSpokenNumberMatch(text, this.spokenNumbers);
+        if (idBaseValue !== null) {
+            if (/\b(ribu|rb|rebu)\b/i.test(text)) return idBaseValue * 1000;
+            if (/\b(juta|jt)\b/i.test(text)) return idBaseValue * 1000000;
+            if (idBaseValue >= 1000) return idBaseValue;
         }
 
-        for (const [spoken, baseValue] of Object.entries(this.englishNumbers)) {
-            if (text.includes(spoken)) {
-                if (text.includes('thousand') || text.includes('k')) return baseValue * 1000;
-                if (text.includes('million')) return baseValue * 1000000;
-                if (baseValue >= 1000) return baseValue;
-            }
+        const enBaseValue = this.findBestSpokenNumberMatch(text, this.englishNumbers);
+        if (enBaseValue !== null) {
+            if (/\b(thousand|k)\b/i.test(text)) return enBaseValue * 1000;
+            if (/\bmillion\b/i.test(text)) return enBaseValue * 1000000;
+            if (enBaseValue >= 1000) return enBaseValue;
         }
 
         const multPattern = /(\d+(?:[.,]\d+)?)\s*(k|rb|ribu|rebu|thousand|juta|jt|million)/i;
@@ -319,6 +345,7 @@ class BilingualParser {
 
     isNumberRelatedToken(t) {
         if (!t) return false;
+        if (/^\d{1,3}(?:[.,]\d{3})+$/.test(t)) return true;
         if (/^\d+(?:[.,]\d+)?$/.test(t)) return true;
         if (t === 'dan' || t === 'and') return true;
         if (t === 'belas' || t === 'puluh' || t === 'ratus') return true;
@@ -382,8 +409,9 @@ class BilingualParser {
             const t = tokens[i];
             if (t === 'dan') continue;
 
-            if (/^\d+(?:[.,]\d+)?$/.test(t)) {
-                current += parseFloat(t.replace(',', '.'));
+            const numeric = this.parseNumericToken(t);
+            if (numeric !== null) {
+                current += numeric;
                 seen = true;
                 continue;
             }
@@ -460,8 +488,9 @@ class BilingualParser {
             const t = tokens[i];
             if (t === 'and') continue;
 
-            if (/^\d+(?:[.,]\d+)?$/.test(t)) {
-                current += parseFloat(t.replace(',', '.'));
+            const numeric = this.parseNumericToken(t);
+            if (numeric !== null) {
+                current += numeric;
                 seen = true;
                 continue;
             }
