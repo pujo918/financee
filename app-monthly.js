@@ -102,6 +102,180 @@ function initEventListeners() {
         renderTransactions();
         updatePeriodLabels();
     });
+
+    const importMergeBtn = document.getElementById('importMergeBtn');
+    const importReplaceBtn = document.getElementById('importReplaceBtn');
+    const importClearBtn = document.getElementById('importClearBtn');
+    if (importMergeBtn && importReplaceBtn && importClearBtn) {
+        importMergeBtn.addEventListener('click', () => importTransactionsFromText(false));
+        importReplaceBtn.addEventListener('click', () => importTransactionsFromText(true));
+        importClearBtn.addEventListener('click', () => {
+            const box = document.getElementById('importData');
+            const status = document.getElementById('importStatus');
+            if (box) box.value = '';
+            if (status) status.textContent = '';
+        });
+    }
+}
+
+function setImportStatus(msg, isError = false) {
+    const el = document.getElementById('importStatus');
+    if (!el) return;
+    el.style.color = isError ? 'var(--danger)' : 'var(--text-secondary)';
+    el.textContent = msg;
+}
+
+function parseAmountFlexible(raw) {
+    if (raw === null || raw === undefined) return 0;
+    let s = String(raw).trim();
+    if (!s) return 0;
+    s = s.replace(/\s+/g, '');
+    s = s.replace(/rp/gi, '');
+    if (!s) return 0;
+
+    const hasComma = s.includes(',');
+    const hasDot = s.includes('.');
+    if (hasComma && hasDot) {
+        s = s.replace(/\./g, '').replace(/,/g, '.');
+    } else if (hasComma && !hasDot) {
+        const lastComma = s.lastIndexOf(',');
+        const decimals = s.length - lastComma - 1;
+        if (decimals === 0) {
+            s = s.replace(/,/g, '');
+        } else if (decimals <= 2) {
+            s = s.replace(/,/g, '.');
+        } else {
+            s = s.replace(/,/g, '');
+        }
+    } else {
+        s = s.replace(/\./g, '');
+    }
+
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? Math.round(n) : 0;
+}
+
+function parseDateFlexible(raw) {
+    if (!raw) return '';
+    const s = String(raw).trim();
+    if (!s) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+    const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) {
+        const mm = String(parseInt(m[1], 10)).padStart(2, '0');
+        const dd = String(parseInt(m[2], 10)).padStart(2, '0');
+        const yyyy = m[3];
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    const dt = new Date(s);
+    if (!Number.isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
+    return '';
+}
+
+function normalizeHeader(h) {
+    return String(h || '')
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '')
+        .replace(/[^a-z]/g, '');
+}
+
+function splitRow(line) {
+    const t = String(line || '').trim();
+    if (!t) return [];
+    if (t.includes('\t')) return t.split('\t');
+    if (t.includes(',')) return t.split(',');
+    return t.split(/\s{2,}/);
+}
+
+function importTransactionsFromText(replaceAll) {
+    const box = document.getElementById('importData');
+    if (!box) return;
+    const raw = String(box.value || '').trim();
+    if (!raw) {
+        setImportStatus('Paste data first.', true);
+        return;
+    }
+
+    const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) {
+        setImportStatus('Need header + at least 1 row.', true);
+        return;
+    }
+
+    const headers = splitRow(lines[0]).map(h => normalizeHeader(h));
+    if (headers.length === 0) {
+        setImportStatus('Header not detected.', true);
+        return;
+    }
+
+    const idx = {
+        id: headers.indexOf('id'),
+        date: headers.indexOf('date'),
+        type: headers.indexOf('type'),
+        category: headers.indexOf('category'),
+        description: headers.indexOf('description'),
+        amount: headers.indexOf('amount'),
+        source: headers.indexOf('source')
+    };
+
+    const required = ['date', 'type', 'category', 'amount'];
+    for (const k of required) {
+        if (idx[k] === -1) {
+            setImportStatus(`Missing column: ${k}`, true);
+            return;
+        }
+    }
+
+    const parsed = [];
+    for (let i = 1; i < lines.length; i++) {
+        const cols = splitRow(lines[i]);
+        if (cols.length === 0) continue;
+
+        const idRaw = idx.id >= 0 ? cols[idx.id] : '';
+        const dateRaw = cols[idx.date];
+        const typeRaw = cols[idx.type];
+        const catRaw = cols[idx.category];
+        const descRaw = idx.description >= 0 ? cols[idx.description] : '';
+        const amtRaw = cols[idx.amount];
+        const srcRaw = idx.source >= 0 ? cols[idx.source] : '';
+
+        const date = parseDateFlexible(dateRaw);
+        const amount = parseAmountFlexible(amtRaw);
+        const type = String(typeRaw || '').toLowerCase().trim();
+        const category = String(catRaw || '').toLowerCase().trim();
+        const description = String(descRaw || '').trim();
+        const method = String(srcRaw || '').toLowerCase().trim() === 'voice' ? 'voice' : 'manual';
+
+        if (!date || !type || !category || !amount) continue;
+        if (type !== 'income' && type !== 'expense') continue;
+
+        let id = Number(idRaw);
+        if (!Number.isFinite(id) || id <= 0) id = Date.now() + i;
+
+        parsed.push({ id, date, type, category, description, amount, method });
+    }
+
+    if (parsed.length === 0) {
+        setImportStatus('No valid rows parsed. Check column order and formats.', true);
+        return;
+    }
+
+    if (replaceAll) {
+        if (!confirm('Replace ALL transactions with imported data?')) return;
+        transactions = parsed.sort((a, b) => b.id - a.id);
+    } else {
+        const map = new Map(transactions.map(t => [String(t.id), t]));
+        for (const t of parsed) map.set(String(t.id), t);
+        transactions = Array.from(map.values()).sort((a, b) => b.id - a.id);
+    }
+
+    saveTransactions();
+    updateDashboards();
+    renderTransactions();
+    setImportStatus(`Imported ${parsed.length} transactions (${replaceAll ? 'replaced' : 'merged'}).`);
 }
 
 // ========== MONTH/YEAR SELECTORS ==========

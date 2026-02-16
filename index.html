@@ -172,6 +172,23 @@
         <div id="transactionsTab" class="tab-content">
             <div class="transactions-section">
                 <h2 style="margin-bottom: 20px;">Transactions <span id="transactionsPeriod" style="color: var(--text-secondary); font-size: 0.9rem;"></span></h2>
+                <details style="margin-bottom: 20px;">
+                    <summary style="cursor: pointer; user-select: none; color: var(--text-secondary); font-weight: 600;">
+                        Restore / Import (Spreadsheet)
+                    </summary>
+                    <div style="margin-top: 12px; padding: 15px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg-primary);">
+                        <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 12px;">
+                            Paste rows from Google Sheets/Excel (with header). Supported columns: Id, Date, Type, Category, Description, Amount, Source.
+                        </div>
+                        <textarea id="importData" rows="6" placeholder="Paste here (TSV/CSV)" style="margin-bottom: 12px;"></textarea>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button type="button" id="importMergeBtn">Import (Merge)</button>
+                            <button type="button" class="btn-secondary" id="importReplaceBtn">Replace All</button>
+                            <button type="button" class="btn-secondary" id="importClearBtn">Clear Box</button>
+                        </div>
+                        <div id="importStatus" style="margin-top: 10px; font-size: 0.9rem; color: var(--text-secondary);"></div>
+                    </div>
+                </details>
                 <div id="transactionsList">
                     <p style="text-align: center; color: var(--text-secondary); padding: 40px;">
                         No transactions yet!
