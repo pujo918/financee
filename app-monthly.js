@@ -9,12 +9,6 @@ let isListening = false;
 let voiceTransaction = null;
 let currentLang = localStorage.getItem('voiceLang') || 'en-US';
 
-let voiceBufferFinal = '';
-let voiceBufferInterim = '';
-let voiceDebounceTimer = null;
-let voiceHasParsed = false;
-let voiceStopRequested = false;
-
 // NEW: Month/Year selection state
 let currentView = 'monthly'; // 'monthly' or 'alltime'
 let selectedMonth = new Date().getMonth();
@@ -562,141 +556,67 @@ function initVoiceRecognition() {
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
-    const isAndroid = /android/i.test(navigator.userAgent || '');
-    recognition.continuous = isAndroid;
+    recognition.continuous = false;
     recognition.interimResults = true;
     recognition.maxAlternatives = 5;
     recognition.lang = currentLang;
 
-    const resetBuffers = () => {
-        voiceBufferFinal = '';
-        voiceBufferInterim = '';
-        voiceHasParsed = false;
-        if (voiceDebounceTimer) {
-            clearTimeout(voiceDebounceTimer);
-            voiceDebounceTimer = null;
-        }
-    };
-
-    const scheduleParse = (delayMs = 700, reason = 'debounce') => {
-        if (!isListening) return;
-        if (voiceDebounceTimer) clearTimeout(voiceDebounceTimer);
-        voiceDebounceTimer = setTimeout(() => {
-            if (!isListening) return;
-            if (voiceHasParsed) return;
-            if (!voiceBufferFinal.trim() && reason !== 'end') return;
-            const transcript = `${voiceBufferFinal} ${voiceBufferInterim}`.trim();
-            if (!transcript) return;
-            voiceHasParsed = true;
-            stopVoiceInput();
-            parseVoiceInput(transcript);
-        }, delayMs);
-    };
-
     recognition.onstart = () => {
         document.getElementById('voiceStatus').textContent = '🎤 Listening...';
         document.getElementById('voiceResult').innerHTML = '<div style="opacity: 0.7;">Processing...</div>';
-        resetBuffers();
-    };
-
-    recognition.onspeechend = () => {
-        if (!isListening || voiceHasParsed) return;
-        scheduleParse(350, 'end');
-    };
-
-    recognition.onsoundend = () => {
-        if (!isListening || voiceHasParsed) return;
-        scheduleParse(350, 'end');
     };
 
     recognition.onresult = (event) => {
-        let gotFinal = '';
-        let gotInterim = '';
+        let finalTranscript = '';
+        let interimTranscript = '';
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
             const res = event.results[i];
             const best = res && res[0] ? res[0].transcript : '';
             if (res.isFinal) {
-                gotFinal += best + ' ';
+                finalTranscript += best + ' ';
             } else {
-                gotInterim += best + ' ';
+                interimTranscript += best + ' ';
             }
         }
 
-        if (gotFinal.trim()) {
-            voiceBufferFinal = `${voiceBufferFinal} ${gotFinal}`.trim();
-        }
-        voiceBufferInterim = gotInterim.trim();
-
-        const transcript = `${voiceBufferFinal} ${voiceBufferInterim}`.trim();
+        const transcript = (finalTranscript + interimTranscript).trim();
         if (!transcript) return;
 
         document.getElementById('voiceResult').innerHTML = `
             <div style="margin-bottom: 8px;"><strong>Heard:</strong> "${transcript}"</div>
-            <div style="font-size: 0.85rem; opacity: 0.8;">${gotFinal.trim() ? 'Listening...' : 'Listening...'}</div>
+            <div style="font-size: 0.85rem; opacity: 0.8;">${finalTranscript.trim() ? 'Parsing...' : 'Listening...'}</div>
         `;
 
-        const quick = voiceBufferFinal && !voiceBufferInterim;
-        const hasFinal = !!voiceBufferFinal.trim();
-        if (hasFinal) {
-            scheduleParse(quick ? 350 : 650, 'final');
-        } else {
-            scheduleParse(1100, 'interim');
+        if (finalTranscript.trim()) {
+            setTimeout(() => parseVoiceInput(finalTranscript.trim()), 150);
         }
     };
 
     recognition.onerror = (event) => {
         let msg = 'Could not understand. Try again.';
         if (event.error === 'no-speech') msg = 'No speech detected.';
-        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') msg = 'Microphone permission blocked.';
-        if (event.error === 'network') msg = 'Network issue. Try again.';
         document.getElementById('voiceStatus').textContent = msg;
         document.getElementById('voiceResult').innerHTML = `<div style="color: var(--warning);">${msg}</div>`;
         stopVoiceInput();
     };
 
     recognition.onend = () => {
-        if (isListening && !voiceHasParsed && !voiceStopRequested) {
-            setTimeout(() => {
-                if (!isListening || voiceHasParsed || voiceStopRequested) return;
-                try {
-                    recognition.start();
-                } catch (e) {
-                    stopVoiceInput();
-                }
-            }, 250);
-            return;
-        }
-        if (!voiceHasParsed) stopVoiceInput();
+        stopVoiceInput();
     };
 }
 
 function toggleVoiceInput() {
     if (isListening) {
-        stopVoiceInput();
+        recognition.stop();
     } else {
-        try {
-            voiceStopRequested = false;
-            recognition.start();
-            isListening = true;
-            document.getElementById('voiceButton').classList.add('listening');
-            document.getElementById('voiceStatus').textContent = '🎤 Listening...';
-        } catch (e) {
-            document.getElementById('voiceStatus').textContent = 'Voice could not start.';
-        }
+        recognition.start();
+        isListening = true;
+        document.getElementById('voiceButton').classList.add('listening');
     }
 }
 
 function stopVoiceInput() {
-    voiceStopRequested = true;
-    if (voiceDebounceTimer) {
-        clearTimeout(voiceDebounceTimer);
-        voiceDebounceTimer = null;
-    }
-    try {
-        if (recognition) recognition.stop();
-    } catch (e) {
-    }
     isListening = false;
     document.getElementById('voiceButton').classList.remove('listening');
     document.getElementById('voiceStatus').textContent = 'Tap to start';
