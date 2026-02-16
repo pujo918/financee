@@ -9,6 +9,11 @@ let isListening = false;
 let voiceTransaction = null;
 let currentLang = localStorage.getItem('voiceLang') || 'en-US';
 
+let voiceBufferFinal = '';
+let voiceBufferInterim = '';
+let voiceDebounceTimer = null;
+let voiceHasParsed = false;
+
 // NEW: Month/Year selection state
 let currentView = 'monthly'; // 'monthly' or 'alltime'
 let selectedMonth = new Date().getMonth();
@@ -561,60 +566,112 @@ function initVoiceRecognition() {
     recognition.maxAlternatives = 5;
     recognition.lang = currentLang;
 
+    const resetBuffers = () => {
+        voiceBufferFinal = '';
+        voiceBufferInterim = '';
+        voiceHasParsed = false;
+        if (voiceDebounceTimer) {
+            clearTimeout(voiceDebounceTimer);
+            voiceDebounceTimer = null;
+        }
+    };
+
+    const scheduleParse = () => {
+        if (!isListening) return;
+        if (voiceDebounceTimer) clearTimeout(voiceDebounceTimer);
+        voiceDebounceTimer = setTimeout(() => {
+            if (!isListening) return;
+            if (voiceHasParsed) return;
+            const transcript = `${voiceBufferFinal} ${voiceBufferInterim}`.trim();
+            if (!transcript) return;
+            voiceHasParsed = true;
+            stopVoiceInput();
+            parseVoiceInput(transcript);
+        }, 700);
+    };
+
     recognition.onstart = () => {
         document.getElementById('voiceStatus').textContent = '🎤 Listening...';
         document.getElementById('voiceResult').innerHTML = '<div style="opacity: 0.7;">Processing...</div>';
+        resetBuffers();
     };
 
     recognition.onresult = (event) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
+        let gotFinal = '';
+        let gotInterim = '';
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
             const res = event.results[i];
             const best = res && res[0] ? res[0].transcript : '';
             if (res.isFinal) {
-                finalTranscript += best + ' ';
+                gotFinal += best + ' ';
             } else {
-                interimTranscript += best + ' ';
+                gotInterim += best + ' ';
             }
         }
 
-        const transcript = (finalTranscript + interimTranscript).trim();
+        if (gotFinal.trim()) {
+            voiceBufferFinal = `${voiceBufferFinal} ${gotFinal}`.trim();
+        }
+        voiceBufferInterim = gotInterim.trim();
+
+        const transcript = `${voiceBufferFinal} ${voiceBufferInterim}`.trim();
         if (!transcript) return;
 
         document.getElementById('voiceResult').innerHTML = `
             <div style="margin-bottom: 8px;"><strong>Heard:</strong> "${transcript}"</div>
-            <div style="font-size: 0.85rem; opacity: 0.8;">${finalTranscript.trim() ? 'Parsing...' : 'Listening...'}</div>
+            <div style="font-size: 0.85rem; opacity: 0.8;">${gotFinal.trim() ? 'Listening...' : 'Listening...'}</div>
         `;
 
-        if (finalTranscript.trim()) {
-            setTimeout(() => parseVoiceInput(finalTranscript.trim()), 150);
-        }
+        scheduleParse();
     };
 
     recognition.onerror = (event) => {
         let msg = 'Could not understand. Try again.';
         if (event.error === 'no-speech') msg = 'No speech detected.';
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') msg = 'Microphone permission blocked.';
+        if (event.error === 'network') msg = 'Network issue. Try again.';
         document.getElementById('voiceStatus').textContent = msg;
         document.getElementById('voiceResult').innerHTML = `<div style="color: var(--warning);">${msg}</div>`;
         stopVoiceInput();
     };
 
-    recognition.onend = () => stopVoiceInput();
+    recognition.onend = () => {
+        if (isListening && !voiceHasParsed) {
+            try {
+                recognition.start();
+                return;
+            } catch (e) {
+            }
+        }
+        stopVoiceInput();
+    };
 }
 
 function toggleVoiceInput() {
     if (isListening) {
-        recognition.stop();
+        stopVoiceInput();
     } else {
-        recognition.start();
-        isListening = true;
-        document.getElementById('voiceButton').classList.add('listening');
+        try {
+            recognition.start();
+            isListening = true;
+            document.getElementById('voiceButton').classList.add('listening');
+            document.getElementById('voiceStatus').textContent = '🎤 Listening...';
+        } catch (e) {
+            document.getElementById('voiceStatus').textContent = 'Voice could not start.';
+        }
     }
 }
 
 function stopVoiceInput() {
+    if (voiceDebounceTimer) {
+        clearTimeout(voiceDebounceTimer);
+        voiceDebounceTimer = null;
+    }
+    try {
+        if (recognition) recognition.stop();
+    } catch (e) {
+    }
     isListening = false;
     document.getElementById('voiceButton').classList.remove('listening');
     document.getElementById('voiceStatus').textContent = 'Tap to start';
