@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#f97316">
     <title>Finance Tracker - Monthly View</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -64,6 +67,11 @@
                         <span>🟢</span> <span>Positive flow!</span>
                     </div>
                 </div>
+                <div class="card rate-card">
+                    <div class="card-title">Saving Rate</div>
+                    <div class="card-value" id="monthlySavingRate">0%</div>
+                    <div class="card-subtitle">(Net / Income)</div>
+                </div>
             </div>
         </div>
 
@@ -91,6 +99,11 @@
                         <span>🟢</span> <span>You're doing well!</span>
                     </div>
                 </div>
+                <div class="card rate-card">
+                    <div class="card-title">Saving Rate</div>
+                    <div class="card-value" id="alltimeSavingRate">0%</div>
+                    <div class="card-subtitle">(Net / Income)</div>
+                </div>
             </div>
         </div>
 
@@ -104,7 +117,9 @@
             <p style="margin-bottom: 20px; opacity: 0.9; font-size: 0.95rem;">
                 Speak naturally - full description captured!
             </p>
-            <button class="voice-button" id="voiceButton">🎤</button>
+            <button class="voice-button" id="voiceButton">
+                <img src="images/naruto.jpeg" alt="Naruto" class="voice-avatar" />
+            </button>
             <div class="voice-status" id="voiceStatus">Tap to start</div>
             <div class="voice-result" id="voiceResult"></div>
             <div class="voice-suggestions" id="voiceSuggestions">
@@ -201,6 +216,32 @@
         <div id="analyticsTab" class="tab-content">
             <div class="chart-container">
                 <h2 style="margin-bottom: 20px;">Spending by Category <span id="analyticsPeriod" style="color: var(--text-secondary); font-size: 0.9rem;"></span></h2>
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-card-title">Expense by Category</div>
+                        <div class="chart-canvas-wrap">
+                            <canvas id="expenseCategoryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-card-title">Expense Trend (Monthly)</div>
+                        <div class="chart-canvas-wrap">
+                            <canvas id="monthlyExpenseChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card chart-card--wide">
+                        <div class="chart-card-title">Income vs Expense (Monthly)</div>
+                        <div class="chart-canvas-wrap">
+                            <canvas id="incomeExpenseChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card chart-card--wide">
+                        <div class="chart-card-title">Saving Rate (Monthly)</div>
+                        <div class="chart-canvas-wrap">
+                            <canvas id="savingRateChart"></canvas>
+                        </div>
+                    </div>
+                </div>
                 <div id="categoryBreakdown"></div>
                 <div class="spreadsheet-link-container">
                     <a class="spreadsheet-link" href="https://docs.google.com/spreadsheets/d/15wMFyEc_tjOyCcbf7ILlQrWLJlLfi3lWNqsRMl563GA/edit?usp=sharing" target="_blank" rel="noopener noreferrer">📄 Open Spreadsheet</a>
@@ -257,6 +298,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="voice-parser.js"></script>
     <script src="app-monthly.js"></script>
 </body>

@@ -9,6 +9,11 @@ let isListening = false;
 let voiceTransaction = null;
 let currentLang = localStorage.getItem('voiceLang') || 'en-US';
 
+let expenseCategoryChart;
+let monthlyExpenseChart;
+let incomeExpenseChart;
+let savingRateChart;
+
 // NEW: Month/Year selection state
 let currentView = 'monthly'; // 'monthly' or 'alltime'
 let selectedMonth = new Date().getMonth();
@@ -94,6 +99,7 @@ function initEventListeners() {
         updateDashboards();
         renderTransactions();
         updatePeriodLabels();
+        if (document.getElementById('analyticsTab')?.classList.contains('active')) renderAnalytics();
     });
     
     document.getElementById('yearSelect').addEventListener('change', function() {
@@ -101,6 +107,7 @@ function initEventListeners() {
         updateDashboards();
         renderTransactions();
         updatePeriodLabels();
+        if (document.getElementById('analyticsTab')?.classList.contains('active')) renderAnalytics();
     });
 
     const importMergeBtn = document.getElementById('importMergeBtn');
@@ -327,6 +334,7 @@ function switchView(view) {
     updateDashboards();
     renderTransactions();
     updatePeriodLabels();
+    if (document.getElementById('analyticsTab')?.classList.contains('active')) renderAnalytics();
 }
 
 // ========== DASHBOARDS UPDATE ==========
@@ -347,10 +355,13 @@ function updateMonthlyDashboard() {
     const income = monthlyTxns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
     const expense = monthlyTxns.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
     const net = income - expense;
+    const savingRate = income > 0 ? (net / income) * 100 : 0;
 
     document.getElementById('monthlyIncome').textContent = `Rp ${income.toLocaleString('id-ID')}`;
     document.getElementById('monthlyExpense').textContent = `Rp ${expense.toLocaleString('id-ID')}`;
     document.getElementById('monthlyNet').textContent = `Rp ${net.toLocaleString('id-ID')}`;
+    const monthlySavingRateEl = document.getElementById('monthlySavingRate');
+    if (monthlySavingRateEl) monthlySavingRateEl.textContent = `${savingRate.toFixed(1)}%`;
 
     const indicator = document.getElementById('monthlyHealthIndicator');
     if (net >= 0) {
@@ -375,10 +386,13 @@ function updateAlltimeDashboard() {
     const allIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
     const allExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
     const balance = allIncome - allExpense;
+    const savingRate = allIncome > 0 ? (balance / allIncome) * 100 : 0;
 
     document.getElementById('alltimeIncome').textContent = `Rp ${allIncome.toLocaleString('id-ID')}`;
     document.getElementById('alltimeExpense').textContent = `Rp ${allExpense.toLocaleString('id-ID')}`;
     document.getElementById('alltimeBalance').textContent = `Rp ${balance.toLocaleString('id-ID')}`;
+    const alltimeSavingRateEl = document.getElementById('alltimeSavingRate');
+    if (alltimeSavingRateEl) alltimeSavingRateEl.textContent = `${savingRate.toFixed(1)}%`;
 
     const indicator = document.getElementById('alltimeHealthIndicator');
     if (balance >= 0) {
@@ -462,6 +476,7 @@ function handleFormSubmit(e) {
     saveTransactions();
     updateDashboards();
     renderTransactions();
+    if (document.getElementById('analyticsTab')?.classList.contains('active')) renderAnalytics();
 
     sendToSheet(buildSheetPayload(transaction));
     
@@ -480,6 +495,7 @@ function deleteTransaction(id) {
         saveTransactions();
         updateDashboards();
         renderTransactions();
+        if (document.getElementById('analyticsTab')?.classList.contains('active')) renderAnalytics();
 
         sendToSheet(buildSheetDeletePayload(id));
     }
@@ -529,6 +545,7 @@ function toggleTheme() {
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
     document.getElementById('themeToggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    if (document.getElementById('analyticsTab')?.classList.contains('active')) renderAnalytics();
 }
 
 function loadTheme() {
@@ -690,6 +707,7 @@ function saveVoiceTransaction() {
         saveTransactions();
         updateDashboards();
         renderTransactions();
+        if (document.getElementById('analyticsTab')?.classList.contains('active')) renderAnalytics();
 
         sendToSheet(buildSheetPayload(txn));
         closeConfirmModal();
@@ -705,6 +723,270 @@ function saveVoiceTransaction() {
 // ========== ANALYTICS ==========
 function renderAnalytics() {
     renderCategoryBreakdown();
+    renderCharts();
+}
+
+function getCssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function getChartPalette() {
+    const accent1 = getCssVar('--accent-primary') || '#667eea';
+    const accent2 = getCssVar('--accent-secondary') || '#764ba2';
+    const danger = getCssVar('--danger') || '#f56565';
+    const success = getCssVar('--success') || '#48bb78';
+    const warning = getCssVar('--warning') || '#ed8936';
+    const text = getCssVar('--text-primary') || '#2d3748';
+    const grid = getCssVar('--border') || '#e2e8f0';
+
+    return {
+        accent1,
+        accent2,
+        danger,
+        success,
+        warning,
+        text,
+        grid,
+        categoryColors: [
+            accent1,
+            accent2,
+            danger,
+            warning,
+            success,
+            '#38b2ac',
+            '#ed64a6',
+            '#4299e1'
+        ]
+    };
+}
+
+function destroyChart(chart) {
+    if (chart && typeof chart.destroy === 'function') chart.destroy();
+}
+
+function monthKey(dateStr) {
+    if (!dateStr) return '';
+    return String(dateStr).slice(0, 7);
+}
+
+function formatMonthLabel(yyyyMm) {
+    const [y, m] = String(yyyyMm).split('-').map(v => parseInt(v, 10));
+    if (!y || !m) return yyyyMm;
+    const d = new Date(y, m - 1, 1);
+    return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+}
+
+function getMonthlyBucketsForSelectedYear() {
+    const months = Array.from({ length: 12 }, (_, i) => `${selectedYear}-${String(i + 1).padStart(2, '0')}`);
+    const totals = months.reduce((acc, k) => (acc[k] = { income: 0, expense: 0 }, acc), {});
+    transactions.forEach(t => {
+        const k = monthKey(t.date);
+        if (!totals[k]) return;
+        if (t.type === 'income') totals[k].income += t.amount;
+        if (t.type === 'expense') totals[k].expense += t.amount;
+    });
+    return { keys: months, totals };
+}
+
+function getMonthlyBucketsLast12() {
+    const dates = transactions.map(t => new Date(t.date)).filter(d => !isNaN(d.getTime()));
+    const anchor = dates.length ? new Date(Math.max(...dates.map(d => d.getTime()))) : new Date();
+    anchor.setDate(1);
+
+    const keys = [];
+    for (let i = 11; i >= 0; i--) {
+        const d = new Date(anchor.getFullYear(), anchor.getMonth() - i, 1);
+        keys.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+
+    const totals = keys.reduce((acc, k) => (acc[k] = { income: 0, expense: 0 }, acc), {});
+    transactions.forEach(t => {
+        const k = monthKey(t.date);
+        if (!totals[k]) return;
+        if (t.type === 'income') totals[k].income += t.amount;
+        if (t.type === 'expense') totals[k].expense += t.amount;
+    });
+
+    return { keys, totals };
+}
+
+function renderCharts() {
+    if (typeof Chart === 'undefined') return;
+
+    const palette = getChartPalette();
+    const expensesFiltered = getFilteredTransactions().filter(t => t.type === 'expense');
+    const categoryTotals = {};
+    expensesFiltered.forEach(t => {
+        categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
+    });
+
+    const categoryLabels = Object.keys(categoryTotals).sort((a, b) => (categoryTotals[b] || 0) - (categoryTotals[a] || 0));
+    const categoryValues = categoryLabels.map(k => categoryTotals[k]);
+    const categoryLabelPretty = categoryLabels.map(k => `${getCategoryEmoji(k)} ${k}`);
+
+    const donutEl = document.getElementById('expenseCategoryChart');
+    if (donutEl) {
+        destroyChart(expenseCategoryChart);
+        expenseCategoryChart = new Chart(donutEl, {
+            type: 'doughnut',
+            data: {
+                labels: categoryLabelPretty,
+                datasets: [{
+                    data: categoryValues.length ? categoryValues : [1],
+                    backgroundColor: categoryValues.length ? palette.categoryColors.slice(0, categoryValues.length) : [palette.grid],
+                    borderColor: palette.grid,
+                    borderWidth: 2,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: palette.text }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => {
+                                const val = Number(ctx.raw) || 0;
+                                return `${ctx.label}: Rp ${val.toLocaleString('id-ID')}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const bucket = currentView === 'monthly' ? getMonthlyBucketsForSelectedYear() : getMonthlyBucketsLast12();
+    const monthLabels = bucket.keys.map(formatMonthLabel);
+    const expenses = bucket.keys.map(k => bucket.totals[k]?.expense || 0);
+    const incomes = bucket.keys.map(k => bucket.totals[k]?.income || 0);
+    const savingRates = bucket.keys.map(k => {
+        const inc = bucket.totals[k]?.income || 0;
+        const exp = bucket.totals[k]?.expense || 0;
+        const net = inc - exp;
+        return inc > 0 ? (net / inc) * 100 : 0;
+    });
+
+    const expenseEl = document.getElementById('monthlyExpenseChart');
+    if (expenseEl) {
+        destroyChart(monthlyExpenseChart);
+        monthlyExpenseChart = new Chart(expenseEl, {
+            type: 'bar',
+            data: {
+                labels: monthLabels,
+                datasets: [{
+                    label: 'Expense',
+                    data: expenses,
+                    backgroundColor: palette.danger,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: palette.text } },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `Rp ${(Number(ctx.raw) || 0).toLocaleString('id-ID')}`
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: palette.text }, grid: { color: palette.grid } },
+                    y: { ticks: { color: palette.text }, grid: { color: palette.grid } }
+                }
+            }
+        });
+    }
+
+    const incExpEl = document.getElementById('incomeExpenseChart');
+    if (incExpEl) {
+        destroyChart(incomeExpenseChart);
+        incomeExpenseChart = new Chart(incExpEl, {
+            type: 'bar',
+            data: {
+                labels: monthLabels,
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: incomes,
+                        backgroundColor: palette.success,
+                        borderRadius: 8
+                    },
+                    {
+                        label: 'Expense',
+                        data: expenses,
+                        backgroundColor: palette.danger,
+                        borderRadius: 8
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: palette.text } },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `Rp ${(Number(ctx.raw) || 0).toLocaleString('id-ID')}`
+                        }
+                    }
+                },
+                scales: {
+                    x: { stacked: false, ticks: { color: palette.text }, grid: { color: palette.grid } },
+                    y: { stacked: false, ticks: { color: palette.text }, grid: { color: palette.grid } }
+                }
+            }
+        });
+    }
+
+    const rateEl = document.getElementById('savingRateChart');
+    if (rateEl) {
+        destroyChart(savingRateChart);
+        savingRateChart = new Chart(rateEl, {
+            type: 'line',
+            data: {
+                labels: monthLabels,
+                datasets: [{
+                    label: 'Saving Rate (%)',
+                    data: savingRates,
+                    borderColor: palette.accent1,
+                    backgroundColor: palette.accent1,
+                    pointRadius: 3,
+                    tension: 0.25
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: palette.text } },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${(Number(ctx.raw) || 0).toFixed(1)}%`
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: palette.text }, grid: { color: palette.grid } },
+                    y: {
+                        suggestedMin: 0,
+                        suggestedMax: 100,
+                        ticks: {
+                            color: palette.text,
+                            callback: (v) => `${v}%`
+                        },
+                        grid: { color: palette.grid }
+                    }
+                }
+            }
+        });
+    }
 }
 
 function renderCategoryBreakdown() {
