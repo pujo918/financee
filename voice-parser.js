@@ -353,10 +353,23 @@ class BilingualParser {
         return null;
     }
 
-    parse(text) {
+    parse(text, existingGoals) {
         const lower = text.toLowerCase().trim();
+        const savingInfo = this.detectSavingIntent(lower, existingGoals || []);
+
+        if (savingInfo) {
+            return {
+                original: text,
+                intent: 'saving',
+                action: savingInfo.action,
+                goalName: savingInfo.goalName,
+                amount: this.extractAmount(lower)
+            };
+        }
+
         return {
             original: text,
+            intent: 'transaction',
             amount: this.extractAmount(lower),
             type: this.detectType(lower),
             category: this.detectCategory(lower),
@@ -743,6 +756,63 @@ class BilingualParser {
         clean = clean.replace(/\s+/g, ' ').trim();
         if (clean.length < 3) return text;
         return clean;
+    }
+
+    detectSavingIntent(text, existingGoals) {
+        const lower = text.toLowerCase();
+
+        const savingKeywords = ['tabung', 'nabung', 'menabung', 'tabungan', 'simpan'];
+        const withdrawKeywords = ['ambil', 'tarik'];
+        const generalMarkers = ['tabunganku', 'tabungan saya'];
+        const prepositions = ['ke', 'untuk', 'di', 'buat'];
+
+        const isWithdraw = withdrawKeywords.some(kw => lower.includes(kw)) &&
+                           (lower.includes('tabungan') || generalMarkers.some(gm => lower.includes(gm)));
+        const isDeposit = !isWithdraw && savingKeywords.some(kw => lower.includes(kw));
+
+        if (!isWithdraw && !isDeposit) return null;
+
+        const action = isWithdraw ? 'withdraw' : 'deposit';
+
+        // Check explicit general markers first
+        if (generalMarkers.some(gm => lower.includes(gm))) {
+            return { action, goalName: null };
+        }
+
+        // Strip saving/withdraw keywords and prepositions to extract candidate words
+        let stripped = lower;
+        [...savingKeywords, ...withdrawKeywords, ...prepositions, 'tabungan'].forEach(kw => {
+            stripped = stripped.replace(new RegExp('\\b' + kw + '\\b', 'g'), ' ');
+        });
+
+        // Remove numbers (digits and spoken)
+        stripped = stripped.replace(/\d+(?:[.,]\d+)?\s*(k|rb|ribu|thousand|juta|jt|million)?/gi, ' ');
+        stripped = stripped.replace(/\b(nol|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|belas|puluh|ratus|seribu|sejuta)\b/gi, ' ');
+        stripped = stripped.replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+
+        // Try to match any word against existing goal names
+        const goalNames = (existingGoals || []).map(g => g.name.toLowerCase().trim());
+        const words = stripped.split(' ').filter(w => w.length > 1);
+
+        let matchedGoal = null;
+        for (const goalName of goalNames) {
+            // Full goal name match
+            if (stripped.includes(goalName)) {
+                matchedGoal = goalName;
+                break;
+            }
+            // Any single word match
+            const goalWords = goalName.split(' ');
+            for (const gw of goalWords) {
+                if (words.includes(gw) && gw.length > 2) {
+                    matchedGoal = goalName;
+                    break;
+                }
+            }
+            if (matchedGoal) break;
+        }
+
+        return { action, goalName: matchedGoal };
     }
 }
 

@@ -4,10 +4,6 @@ let budgets = JSON.parse(localStorage.getItem('budgets')) || {
     food: 500000, transport: 300000, bills: 500000, study: 400000,
     entertainment: 200000, shopping: 300000, health: 200000, other: 200000
 };
-let recognition;
-let isListening = false;
-let voiceTransaction = null;
-let currentLang = localStorage.getItem('voiceLang') || 'en-US';
 
 let expenseCategoryChart;
 let monthlyExpenseChart;
@@ -64,13 +60,11 @@ document.addEventListener('DOMContentLoaded', function() {
     populateMonthYearSelectors();
     updateDashboards();
     renderTransactions();
-    initVoiceRecognition();
-    renderBudgetForm();
+        renderBudgetForm();
     showDailyQuote();
     initEventListeners();
     updateLangButton();
-    updateVoiceSuggestions();
-});
+    });
 
 function initEventListeners() {
     document.getElementById('themeToggle').addEventListener('click', toggleTheme);
@@ -561,163 +555,6 @@ function switchTab(tabName, clickedTab) {
     clickedTab.classList.add('active');
     document.getElementById(tabName + 'Tab').classList.add('active');
     if (tabName === 'analytics') renderAnalytics();
-}
-
-// ========== VOICE (Same as before) ==========
-function initVoiceRecognition() {
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-        document.getElementById('voiceStatus').textContent = '❌ Voice not supported';
-        document.getElementById('voiceButton').disabled = true;
-        return;
-    }
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 5;
-    recognition.lang = currentLang;
-
-    recognition.onstart = () => {
-        document.getElementById('voiceStatus').textContent = '🎤 Listening...';
-        document.getElementById('voiceResult').innerHTML = '<div style="opacity: 0.7;">Processing...</div>';
-    };
-
-    recognition.onresult = (event) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-            const res = event.results[i];
-            const best = res && res[0] ? res[0].transcript : '';
-            if (res.isFinal) {
-                finalTranscript += best + ' ';
-            } else {
-                interimTranscript += best + ' ';
-            }
-        }
-
-        const transcript = (finalTranscript + interimTranscript).trim();
-        if (!transcript) return;
-
-        document.getElementById('voiceResult').innerHTML = `
-            <div style="margin-bottom: 8px;"><strong>Heard:</strong> "${transcript}"</div>
-            <div style="font-size: 0.85rem; opacity: 0.8;">${finalTranscript.trim() ? 'Parsing...' : 'Listening...'}</div>
-        `;
-
-        if (finalTranscript.trim()) {
-            setTimeout(() => parseVoiceInput(finalTranscript.trim()), 150);
-        }
-    };
-
-    recognition.onerror = (event) => {
-        let msg = 'Could not understand. Try again.';
-        if (event.error === 'no-speech') msg = 'No speech detected.';
-        document.getElementById('voiceStatus').textContent = msg;
-        document.getElementById('voiceResult').innerHTML = `<div style="color: var(--warning);">${msg}</div>`;
-        stopVoiceInput();
-    };
-
-    recognition.onend = () => {
-        stopVoiceInput();
-    };
-}
-
-function toggleVoiceInput() {
-    if (isListening) {
-        recognition.stop();
-    } else {
-        recognition.start();
-        isListening = true;
-        document.getElementById('voiceButton').classList.add('listening');
-    }
-}
-
-function stopVoiceInput() {
-    isListening = false;
-    document.getElementById('voiceButton').classList.remove('listening');
-    document.getElementById('voiceStatus').textContent = 'Tap to start';
-}
-
-function simulateVoice(text) {
-    document.getElementById('voiceResult').innerHTML = `
-        <div style="margin-bottom: 8px;"><strong>Testing:</strong> "${text}"</div>
-        <div style="font-size: 0.85rem; opacity: 0.8;">Parsing...</div>
-    `;
-    setTimeout(() => parseVoiceInput(text), 300);
-}
-
-function parseVoiceInput(text) {
-    const parsed = parser.parse(text);
-    document.getElementById('voiceResult').innerHTML = `
-        <div style="background: rgba(255,255,255,0.2); padding: 12px; border-radius: 8px; line-height: 1.8;">
-            <strong>Parsed:</strong><br>
-            💰 Rp ${parsed.amount.toLocaleString('id-ID')}<br>
-            📊 ${parsed.type === 'income' ? '✅ Income' : '❌ Expense'}<br>
-            📁 ${getCategoryEmoji(parsed.category)} ${parsed.category}<br>
-            📅 ${formatDate(parsed.date)}<br>
-            📝 ${parsed.description}
-        </div>
-    `;
-
-    if (parsed.amount === 0) {
-        document.getElementById('voiceResult').innerHTML += `
-            <div style="background: rgba(237, 137, 54, 0.3); margin-top: 10px; padding: 12px; border-radius: 8px; color: white;">
-                ⚠️ No amount detected!<br>
-                <small>Try: "25k" or "dua puluh ribu"</small>
-            </div>
-        `;
-        return;
-    }
-
-    voiceTransaction = {
-        type: parsed.type,
-        amount: parsed.amount,
-        category: parsed.category,
-        date: parsed.date,
-        description: parsed.description,
-        method: 'voice'
-    };
-
-    showConfirmModal();
-}
-
-// ========== MODAL ==========
-function showConfirmModal() {
-    document.getElementById('confirmType').innerHTML = 
-        voiceTransaction.type === 'income' 
-            ? '<span style="color: var(--success);">✅ Income</span>' 
-            : '<span style="color: var(--danger);">❌ Expense</span>';
-    document.getElementById('confirmAmount').textContent = `Rp ${voiceTransaction.amount.toLocaleString('id-ID')}`;
-    document.getElementById('confirmCategory').innerHTML = `${getCategoryEmoji(voiceTransaction.category)} ${voiceTransaction.category}`;
-    document.getElementById('confirmDate').textContent = formatDate(voiceTransaction.date);
-    document.getElementById('confirmDescription').textContent = voiceTransaction.description;
-    document.getElementById('confirmModal').classList.add('active');
-}
-
-function closeConfirmModal() {
-    document.getElementById('confirmModal').classList.remove('active');
-    voiceTransaction = null;
-}
-
-function saveVoiceTransaction() {
-    if (voiceTransaction && voiceTransaction.amount > 0) {
-        const txn = { id: Date.now(), ...voiceTransaction };
-        transactions.unshift(txn);
-        saveTransactions();
-        updateDashboards();
-        renderTransactions();
-        if (document.getElementById('analyticsTab')?.classList.contains('active')) renderAnalytics();
-
-        sendToSheet(buildSheetPayload(txn));
-        closeConfirmModal();
-        document.getElementById('voiceResult').innerHTML = `
-            <div style="background: rgba(72, 187, 120, 0.3); padding: 15px; border-radius: 8px; color: white;">
-                <strong>✓ Saved!</strong>
-            </div>
-        `;
-        setTimeout(() => { document.getElementById('voiceResult').innerHTML = ''; }, 3000);
-    }
 }
 
 // ========== ANALYTICS ==========

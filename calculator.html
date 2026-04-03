@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f97316">
+    <title>Finance Tracker - Budget Planner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .planner-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+        .planner-card-title {
+            font-weight: 700; font-size: 1rem; margin-bottom: 16px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .pct-row {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+        }
+        .pct-label { min-width: 110px; font-size: 0.9rem; color: var(--text-secondary); }
+        .pct-row input[type="range"] { flex: 1; cursor: pointer; accent-color: var(--accent-primary); }
+        .pct-display {
+            min-width: 48px; text-align: right; font-weight: 700;
+            font-size: 0.95rem; color: var(--text-primary);
+        }
+        .warning-badge {
+            background: rgba(237,137,54,0.2); color: var(--warning);
+            border-radius: 8px; padding: 8px 14px; font-size: 0.85rem;
+            font-weight: 600; margin-top: 8px; display: none;
+        }
+        .warning-badge.visible { display: block; }
+
+        /* Output cards */
+        .output-section { margin-top: 28px; }
+        .output-header {
+            font-size: 1.1rem; font-weight: 700;
+            margin-bottom: 16px; color: var(--text-primary);
+        }
+        .output-card {
+            border-radius: 14px; padding: 16px 18px; margin-bottom: 14px;
+            border-left: 5px solid;
+        }
+        .output-card.needs  { border-color: var(--danger);  background: rgba(245,101,101,0.08); }
+        .output-card.wants  { border-color: var(--warning); background: rgba(237,137,54,0.08); }
+        .output-card.saving { border-color: var(--success); background: rgba(72,187,120,0.08); }
+        .output-card-label { font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+        .output-card-value { font-size: 1.5rem; font-weight: 800; margin-bottom: 6px; }
+        .output-card.needs  .output-card-value { color: var(--danger); }
+        .output-card.wants  .output-card-value { color: var(--warning); }
+        .output-card.saving .output-card-value { color: var(--success); }
+        .sub-breakdown { border-top: 1px dashed var(--border); margin-top: 10px; padding-top: 10px; }
+        .sub-row {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.88rem; margin-bottom: 6px;
+        }
+        .sub-row-label { color: var(--text-secondary); }
+        .sub-row-value { font-weight: 700; color: var(--text-primary); }
+        .sub-pct-row {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+        }
+        .sub-pct-row label { min-width: 110px; font-size: 0.85rem; color: var(--text-secondary); }
+        .sub-pct-row input[type="range"] { flex: 1; accent-color: var(--danger); cursor: pointer; }
+        .sub-pct-display { min-width: 40px; text-align: right; font-weight: 700; font-size: 0.85rem; }
+        .sub-warning { color: var(--warning); font-size: 0.8rem; font-weight: 600; display: none; }
+        .sub-warning.visible { display: block; margin-top: 4px; }
+
+        /* Bar chart */
+        .bar-chart { margin-top: 20px; }
+        .bar-chart-title { font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; }
+        .bar-chart-track {
+            display: flex; height: 28px; border-radius: 10px;
+            overflow: hidden; width: 100%; margin-bottom: 10px;
+        }
+        .bar-needs  { background: var(--danger);  transition: width 0.5s; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.78rem; font-weight: 700; }
+        .bar-wants  { background: var(--warning); transition: width 0.5s; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.78rem; font-weight: 700; }
+        .bar-saving { background: var(--success); transition: width 0.5s; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.78rem; font-weight: 700; }
+        .bar-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.82rem; color: var(--text-secondary); }
+        .bar-legend span { display: flex; align-items: center; gap: 5px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>💰 Finance Tracker</h1>
+            <nav class="main-nav">
+                <a href="index.html" class="nav-link">Dashboard</a>
+                <a href="saving.html" class="nav-link">Tabungan</a>
+                <a href="calculator.html" class="nav-link active">Planner</a>
+            </nav>
+            <div class="header-actions">
+                <button class="theme-toggle" id="themeToggle">🌙</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="quote-section">
+            <p id="dailyQuote">"Rencanakan pengeluaran, kendalikan hidup!"</p>
+        </div>
+
+        <h2 style="margin-bottom:20px;">📊 Budget Planner</h2>
+
+        <!-- ── STEP 1: Input Income ── -->
+        <div class="planner-card">
+            <div class="planner-card-title">💵 Step 1 – Input Pendapatan</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nominal Pendapatan (Rp)</label>
+                    <input type="number" id="incomeInput" placeholder="cth: 5000000" oninput="calculate()">
+                </div>
+                <div class="form-group">
+                    <label>Siklus</label>
+                    <select id="cycleSelect" onchange="calculate()">
+                        <option value="monthly">Bulanan</option>
+                        <option value="weekly">Mingguan (×4)</option>
+                    </select>
+                </div>
+            </div>
+            <div style="margin-top:12px;">
+                <span style="color:var(--text-secondary);font-size:0.9rem;">Pendapatan bulanan yang digunakan: </span>
+                <strong id="monthlyIncomeDisplay" style="color:var(--accent-primary);">Rp 0</strong>
+            </div>
+        </div>
+
+        <!-- ── STEP 2: Level 1 Percentages ── -->
+        <div class="planner-card">
+            <div class="planner-card-title">⚖️ Step 2 – Alokasi Utama
+                <span style="font-size:0.78rem;font-weight:400;color:var(--text-secondary);">(total harus = 100%)</span>
+            </div>
+
+            <div class="pct-row">
+                <span class="pct-label">🛒 Kebutuhan</span>
+                <input type="range" id="needsPct" min="0" max="100" value="50" oninput="syncSlider('needs');calculate()">
+                <span class="pct-display" id="needsPctDisplay">50%</span>
+            </div>
+            <div class="pct-row">
+                <span class="pct-label">🎉 Keinginan</span>
+                <input type="range" id="wantsPct" min="0" max="100" value="30" oninput="syncSlider('wants');calculate()">
+                <span class="pct-display" id="wantsPctDisplay">30%</span>
+            </div>
+            <div class="pct-row">
+                <span class="pct-label">💰 Tabungan</span>
+                <input type="range" id="savingPct" min="0" max="100" value="20" oninput="syncSlider('saving');calculate()">
+                <span class="pct-display" id="savingPctDisplay">20%</span>
+            </div>
+
+            <div class="warning-badge" id="l1Warning">⚠️ Total persentase belum 100%! Sesuaikan slider.</div>
+        </div>
+
+        <!-- ── STEP 3: Needs Breakdown ── -->
+        <div class="planner-card">
+            <div class="planner-card-title">🛒 Step 3 – Rincian Kebutuhan
+                <span style="font-size:0.78rem;font-weight:400;color:var(--text-secondary);">(total harus = 100%)</span>
+            </div>
+
+            <div class="sub-pct-row">
+                <label>🍔 Makanan</label>
+                <input type="range" id="foodPct" min="0" max="100" value="50" oninput="syncSubSlider();calculate()">
+                <span class="sub-pct-display" id="foodPctDisplay">50%</span>
+            </div>
+            <div class="sub-pct-row">
+                <label>🚗 Transport</label>
+                <input type="range" id="transPct" min="0" max="100" value="25" oninput="syncSubSlider();calculate()">
+                <span class="sub-pct-display" id="transPctDisplay">25%</span>
+            </div>
+            <div class="sub-pct-row">
+                <label>🏥 Kesehatan</label>
+                <input type="range" id="healthPct" min="0" max="100" value="25" oninput="syncSubSlider();calculate()">
+                <span class="sub-pct-display" id="healthPctDisplay">25%</span>
+            </div>
+
+            <div class="sub-warning" id="l2Warning">⚠️ Total rincian kebutuhan belum 100%!</div>
+        </div>
+
+        <!-- ── OUTPUT ── -->
+        <div class="output-section" id="outputSection">
+            <div class="output-header">📋 Hasil Rekomendasi</div>
+
+            <!-- Bar visualization -->
+            <div class="bar-chart">
+                <div class="bar-chart-title">Komposisi Alokasi Budget</div>
+                <div class="bar-chart-track">
+                    <div class="bar-needs"  id="barNeeds"  style="width:50%">50%</div>
+                    <div class="bar-wants"  id="barWants"  style="width:30%">30%</div>
+                    <div class="bar-saving" id="barSaving" style="width:20%">20%</div>
+                </div>
+                <div class="bar-legend">
+                    <span><span class="dot" style="background:var(--danger)"></span> Kebutuhan</span>
+                    <span><span class="dot" style="background:var(--warning)"></span> Keinginan</span>
+                    <span><span class="dot" style="background:var(--success)"></span> Tabungan</span>
+                </div>
+            </div>
+
+            <!-- Needs card -->
+            <div class="output-card needs" style="margin-top:20px;">
+                <div class="output-card-label">🛒 KEBUTUHAN (<span id="outNeedsPct">50</span>%)</div>
+                <div class="output-card-value" id="outNeeds">Rp 0</div>
+                <div class="sub-breakdown">
+                    <div class="sub-row">
+                        <span class="sub-row-label">🍔 Makanan (<span id="outFoodPct">50</span>%)</span>
+                        <span class="sub-row-value" id="outFood">Rp 0</span>
+                    </div>
+                    <div class="sub-row">
+                        <span class="sub-row-label">🚗 Transport (<span id="outTransPct">25</span>%)</span>
+                        <span class="sub-row-value" id="outTrans">Rp 0</span>
+                    </div>
+                    <div class="sub-row">
+                        <span class="sub-row-label">🏥 Kesehatan (<span id="outHealthPct">25</span>%)</span>
+                        <span class="sub-row-value" id="outHealth">Rp 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wants card -->
+            <div class="output-card wants">
+                <div class="output-card-label">🎉 KEINGINAN (<span id="outWantsPct">30</span>%)</div>
+                <div class="output-card-value" id="outWants">Rp 0</div>
+                <div style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px;">Hiburan, belanja, hobi</div>
+            </div>
+
+            <!-- Saving card -->
+            <div class="output-card saving">
+                <div class="output-card-label">💰 TABUNGAN (<span id="outSavingPct">20</span>%)</div>
+                <div class="output-card-value" id="outSaving">Rp 0</div>
+                <div style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px;">Investasi, dana darurat, tujuan finansial</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app-calculator.js"></script>
+</body>
+</html>

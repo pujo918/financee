@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f97316">
+    <title>Finance Tracker - Tabungan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ── Saving-page extras ── */
+        .saving-hero {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .general-card {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .general-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.25); }
+        .goals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .goal-card {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+        .goal-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.25); }
+        .goal-delete-btn {
+            position: absolute; top: 12px; right: 12px;
+            background: rgba(245,101,101,0.2); color: var(--danger);
+            border: none; border-radius: 50%; width: 28px; height: 28px;
+            font-size: 0.8rem; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s;
+        }
+        .goal-delete-btn:hover { background: rgba(245,101,101,0.5); }
+        .progress-bar-wrap {
+            background: var(--bg-primary);
+            height: 10px; border-radius: 5px; overflow: hidden; margin-top: 10px;
+        }
+        .progress-bar-fill {
+            height: 100%; border-radius: 5px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            transition: width 0.5s ease;
+        }
+        .progress-bar-fill.complete { background: var(--success); }
+
+        /* ── History Modal ── */
+        .saving-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+        .saving-modal.active { display: flex; }
+        .saving-modal-content {
+            background: var(--bg-card); border-radius: 20px; padding: 24px;
+            width: 100%; max-width: 500px; max-height: 85vh;
+            overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-close-btn {
+            float: right; background: none; border: none; font-size: 1.5rem;
+            cursor: pointer; color: var(--text-secondary); line-height: 1;
+        }
+        .history-list { margin-top: 16px; }
+        .history-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 14px; border-radius: 10px; margin-bottom: 8px;
+            background: var(--bg-primary);
+        }
+        .history-item-left { display: flex; flex-direction: column; gap: 2px; }
+        .history-item-date { font-size: 0.8rem; color: var(--text-secondary); }
+        .history-item-amount { font-weight: 700; }
+        .history-item-amount.add { color: var(--success); }
+        .history-item-amount.withdraw { color: var(--danger); }
+        .history-del-btn {
+            background: rgba(245,101,101,0.15); color: var(--danger);
+            border: none; border-radius: 8px; padding: 4px 10px;
+            font-size: 0.75rem; cursor: pointer; transition: background 0.2s;
+        }
+        .history-del-btn:hover { background: rgba(245,101,101,0.35); }
+        .empty-history { text-align: center; color: var(--text-secondary); padding: 24px; font-size: 0.9rem; }
+
+        /* ── Add Goal Form ── */
+        .add-goal-section { margin-bottom: 32px; }
+        .section-heading {
+            font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;
+            color: var(--text-primary); display: flex; align-items: center; gap: 8px;
+        }
+        .max-badge {
+            font-size: 0.75rem; background: var(--accent-primary);
+            color: white; border-radius: 20px; padding: 2px 10px; font-weight: 600;
+        }
+
+        /* ── Voice ── */
+        .voice-section { margin-bottom: 32px; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>💰 Finance Tracker</h1>
+            <nav class="main-nav">
+                <a href="index.html" class="nav-link">Dashboard</a>
+                <a href="saving.html" class="nav-link active">Tabungan</a>
+                <a href="calculator.html" class="nav-link">Planner</a>
+            </nav>
+            <div class="header-actions">
+                <button class="lang-toggle" id="langToggle">🇮🇩 ID</button>
+                <button class="theme-toggle" id="themeToggle">🌙</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Quote -->
+        <div class="quote-section">
+            <p id="dailyQuote">"Nabung pangkal kaya!"</p>
+        </div>
+
+        <!-- ======== TABUNGAN UMUM ======== -->
+        <div class="section-heading">💳 Tabungan Umum</div>
+        <div class="saving-hero">
+            <div class="card balance-card general-card" id="generalCard" onclick="openGeneralModal()">
+                <div class="card-title">Total Saldo Tabungan Umum</div>
+                <div class="card-value" id="generalBalance">Rp 0</div>
+                <div class="card-subtitle" style="margin-top:8px; opacity:0.7;">Klik untuk lihat riwayat →</div>
+            </div>
+        </div>
+
+        <!-- ======== TABUNGAN TUJUAN ======== -->
+        <div class="section-heading">
+            🎯 Tabungan Tujuan
+            <span class="max-badge" id="goalCountBadge">0/5</span>
+        </div>
+        <div class="goals-grid" id="goalsContainer">
+            <p style="color:var(--text-secondary);padding:10px 0;" id="noGoalsMsg">Belum ada tujuan tabungan.</p>
+        </div>
+
+        <!-- ======== TAMBAH TUJUAN ======== -->
+        <div class="add-goal-section">
+            <div class="transaction-form">
+                <h2 style="margin-bottom:20px;">➕ Tambah Tujuan Baru</h2>
+                <form id="goalForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nama Tujuan</label>
+                            <input type="text" id="goalName" required placeholder="cth: Jepang, Motor, Laptop">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Target (Rp)</label>
+                            <input type="number" id="goalTarget" required placeholder="5000000">
+                        </div>
+                        <div class="form-group">
+                            <label>Deadline</label>
+                            <input type="date" id="goalDeadline" required>
+                        </div>
+                    </div>
+                    <button type="submit" style="width:100%;">Buat Tujuan</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ======== VOICE INPUT ======== -->
+        <div class="voice-section">
+            <div class="voice-container">
+                <div class="voice-header">
+                    <div>
+                        <h2 class="voice-title">🎤 Voice Input</h2>
+                        <p class="voice-subtitle" id="voiceStatus">Tap untuk mulai</p>
+                    </div>
+                    <button class="voice-button" id="voiceButton">🎤</button>
+                </div>
+                <div id="voiceResult"></div>
+                <div class="voice-suggestions" id="voiceSuggestions"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======== GENERAL MODAL ======== -->
+    <div class="saving-modal" id="generalModal">
+        <div class="saving-modal-content">
+            <button class="modal-close-btn" onclick="closeModal('generalModal')">✕</button>
+            <h2 style="margin-bottom:4px;">💳 Tabungan Umum</h2>
+            <div style="font-size:2rem;font-weight:800;color:var(--accent-primary);margin:12px 0;" id="modalGeneralBalance">Rp 0</div>
+
+            <!-- Manual input in modal -->
+            <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+                <input type="number" id="manualGeneralAmount" placeholder="Nominal (Rp)" style="flex:1;min-width:120px;">
+                <button onclick="manualSaveGeneral('add')" style="background:var(--success);color:white;border:none;border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:700;">+ Tambah</button>
+                <button onclick="manualSaveGeneral('withdraw')" style="background:var(--danger);color:white;border:none;border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:700;">- Tarik</button>
+            </div>
+
+            <div class="section-heading" style="font-size:0.95rem;">📋 Riwayat</div>
+            <div class="history-list" id="generalHistoryList"></div>
+        </div>
+    </div>
+
+    <!-- ======== GOAL MODAL ======== -->
+    <div class="saving-modal" id="goalModal">
+        <div class="saving-modal-content">
+            <button class="modal-close-btn" onclick="closeModal('goalModal')">✕</button>
+            <h2 style="margin-bottom:4px;" id="modalGoalName">—</h2>
+
+            <div style="margin:12px 0;">
+                <div style="display:flex;justify-content:space-between;font-size:0.9rem;color:var(--text-secondary);margin-bottom:6px;">
+                    <span>Terkumpul</span><span id="modalGoalPct" style="font-weight:700;"></span>
+                </div>
+                <div style="font-size:1.8rem;font-weight:800;color:var(--accent-primary);" id="modalGoalCurrent"></div>
+                <div style="font-size:0.9rem;color:var(--text-secondary);">dari target <strong id="modalGoalTarget"></strong></div>
+                <div class="progress-bar-wrap" style="margin-top:10px;">
+                    <div class="progress-bar-fill" id="modalGoalBar" style="width:0%"></div>
+                </div>
+                <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:6px;">Deadline: <strong id="modalGoalDeadline"></strong></div>
+            </div>
+
+            <!-- Manual input in modal -->
+            <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+                <input type="number" id="manualGoalAmount" placeholder="Nominal (Rp)" style="flex:1;min-width:120px;">
+                <button onclick="manualSaveGoal('add')" style="background:var(--success);color:white;border:none;border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:700;">+ Tambah</button>
+                <button onclick="manualSaveGoal('withdraw')" style="background:var(--danger);color:white;border:none;border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:700;">- Tarik</button>
+            </div>
+
+            <div class="section-heading" style="font-size:0.95rem;">📋 Riwayat</div>
+            <div class="history-list" id="goalHistoryList"></div>
+        </div>
+    </div>
+
+    <!-- ======== VOICE CONFIRM MODAL ======== -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon">✅</div>
+                <div>
+                    <h2>Konfirmasi</h2>
+                    <p style="color:var(--text-secondary);font-size:0.9rem;margin-top:5px;">Periksa sebelum menyimpan</p>
+                </div>
+            </div>
+            <div class="confirm-details"></div>
+            <div class="modal-actions">
+                <button class="btn-success" id="confirmSaveBtn">✓ Simpan</button>
+                <button class="btn-secondary" id="confirmCancelBtn">✗ Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="voice-parser.js"></script>
+    <script src="app-global-voice.js"></script>
+    <script src="app-saving.js"></script>
+</body>
+</html>
