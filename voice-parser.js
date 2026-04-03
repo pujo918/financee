@@ -12,7 +12,7 @@ class BilingualParser {
             'sepuluh': 10, 'sebelas': 11, 'dua belas': 12, 'tiga belas': 13,
             'empat belas': 14, 'lima belas': 15, 'enam belas': 16,
             'tujuh belas': 17, 'delapan belas': 18, 'sembilan belas': 19,
-            'dua puluh': 20, 'tiga puluh': 30, 'empat puluh': 40, 
+            'dua puluh': 20, 'tiga puluh': 30, 'empat puluh': 40,
             'lima puluh': 50, 'enam puluh': 60, 'tujuh puluh': 70,
             'delapan puluh': 80, 'sembilan puluh': 90,
             'seratus': 100, 'dua ratus': 200, 'tiga ratus': 300,
@@ -193,7 +193,7 @@ class BilingualParser {
             'taxi': 'transport', 'grab': 'transport', 'gojek': 'transport',
             'ojek': 'transport', 'ojol': 'transport', 'parkir': 'transport',
             'parking': 'transport', 'tol': 'transport', 'toll': 'transport',
-            'rent': 'bills', 'kos': 'bills', 'electricity': 'bills', 
+            'rent': 'bills', 'kos': 'bills', 'electricity': 'bills',
             'listrik': 'bills', 'internet': 'bills', 'wifi': 'bills',
             'pulsa': 'bills', 'phone': 'bills', 'water': 'bills', 'air': 'bills',
             'book': 'study', 'buku': 'study', 'textbook': 'study',
@@ -767,7 +767,7 @@ class BilingualParser {
         const prepositions = ['ke', 'untuk', 'di', 'buat'];
 
         const isWithdraw = withdrawKeywords.some(kw => lower.includes(kw)) &&
-                           (lower.includes('tabungan') || generalMarkers.some(gm => lower.includes(gm)));
+            (lower.includes('tabungan') || generalMarkers.some(gm => lower.includes(gm)));
         const isDeposit = !isWithdraw && savingKeywords.some(kw => lower.includes(kw));
 
         if (!isWithdraw && !isDeposit) return null;
