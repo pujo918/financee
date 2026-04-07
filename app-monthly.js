@@ -1,6 +1,6 @@
 // ========== APP STATE ==========
-let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
-let budgets = JSON.parse(localStorage.getItem('budgets')) || {
+var transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+var budgets = JSON.parse(localStorage.getItem('budgets')) || {
     food: 500000, transport: 300000, bills: 500000, study: 400000,
     entertainment: 200000, shopping: 300000, health: 200000, other: 200000
 };
@@ -554,7 +554,15 @@ function switchTab(tabName, clickedTab) {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     clickedTab.classList.add('active');
     document.getElementById(tabName + 'Tab').classList.add('active');
+    if (tabName === 'transactions') {
+        updatePeriodLabels();
+        renderTransactions();
+    }
     if (tabName === 'analytics') renderAnalytics();
+    if (tabName === 'budget') {
+        if (typeof updateBudgetStatus === 'function') updateBudgetStatus();
+        if (typeof renderBudgetForm === 'function') renderBudgetForm();
+    }
 }
 
 // ========== ANALYTICS ==========
