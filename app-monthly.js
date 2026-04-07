@@ -67,7 +67,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
 function initEventListeners() {
-    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
     document.getElementById('langToggle').addEventListener('click', toggleLanguage);
     document.getElementById('voiceButton').addEventListener('click', toggleVoiceInput);
     
@@ -537,13 +536,13 @@ function toggleTheme() {
     const current = document.documentElement.getAttribute('data-theme');
     const newTheme = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+    localStorage.setItem('colorTheme', newTheme);
     document.getElementById('themeToggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
     if (document.getElementById('analyticsTab')?.classList.contains('active')) renderAnalytics();
 }
 
 function loadTheme() {
-    const saved = localStorage.getItem('theme') || 'light';
+    const saved = localStorage.getItem('colorTheme') || 'light';
     document.documentElement.setAttribute('data-theme', saved);
     document.getElementById('themeToggle').textContent = saved === 'dark' ? '☀️' : '🌙';
 }
@@ -920,13 +919,22 @@ function updateBudgetStatus() {
 
 // ========== HELPERS ==========
 function showDailyQuote() {
-    const quotes = [
-        "Track smart, spend wise!",
-        "Monthly reflection helps growth!",
-        "Financial awareness = Freedom!",
-        "You're doing great!",
-        "Small steps, big savings!"
-    ];
+    const imageTheme = localStorage.getItem('theme') || 'naruto';
+    const quotes = imageTheme === 'onepiece'
+        ? [
+            "Set sail, track every berry!",
+            "Build your treasure, one step at a time!",
+            "Navigate your budget like a captain!",
+            "Keep your crew budget battle-ready!",
+            "Grand goals start from daily discipline!"
+        ]
+        : [
+            "Track smart, spend wise!",
+            "Monthly reflection helps growth!",
+            "Financial awareness = Freedom!",
+            "You're doing great!",
+            "Small steps, big savings!"
+        ];
     document.getElementById('dailyQuote').textContent = `"${quotes[Math.floor(Math.random() * quotes.length)]}"`;
 }
 

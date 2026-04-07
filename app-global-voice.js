@@ -57,24 +57,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (confirmCancelBtn) confirmCancelBtn.addEventListener('click', closeConfirmModal);
 
     // Theme / lang init
-    initTheme();
+    syncThemeDisplay();
     initLang();
     updateVoiceSuggestions();
 });
 
-function initTheme() {
+function syncThemeDisplay() {
     const btn = document.getElementById('themeToggle');
-    const saved = localStorage.getItem('theme') || 'dark';
+    const saved = localStorage.getItem('colorTheme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
     document.body.setAttribute('data-theme', saved);
     if (btn) {
         btn.textContent = saved === 'dark' ? '☀️' : '🌙';
-        btn.addEventListener('click', () => {
-            const isDark = document.body.getAttribute('data-theme') === 'dark';
-            const next = isDark ? 'light' : 'dark';
-            document.body.setAttribute('data-theme', next);
-            localStorage.setItem('theme', next);
-            btn.textContent = next === 'dark' ? '☀️' : '🌙';
-        });
     }
 }
 

@@ -1,21 +1,6 @@
 // app-calculator.js – Budget Planner logic
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Theme
-    const btn = document.getElementById('themeToggle');
-    const saved = localStorage.getItem('theme') || 'dark';
-    document.body.setAttribute('data-theme', saved);
-    if (btn) {
-        btn.textContent = saved === 'dark' ? '☀️' : '🌙';
-        btn.addEventListener('click', () => {
-            const isDark = document.body.getAttribute('data-theme') === 'dark';
-            const next = isDark ? 'light' : 'dark';
-            document.body.setAttribute('data-theme', next);
-            localStorage.setItem('theme', next);
-            btn.textContent = next === 'dark' ? '☀️' : '🌙';
-        });
-    }
-
     // Initial render
     calculate();
 });
