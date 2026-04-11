@@ -115,7 +115,7 @@ function handleAddGoal(e) {
     }
 
     const name = document.getElementById('goalName').value.trim();
-    const target = Number(document.getElementById('goalTarget').value);
+    const target = window.getUnformattedValue('goalTarget');
     const deadline = document.getElementById('goalDeadline').value;
 
     if (!name || isNaN(target) || target <= 0 || !deadline) {
@@ -197,7 +197,7 @@ function deleteGeneralHistory(index) {
 }
 
 function manualSaveGeneral(type) {
-    const amount = Number(document.getElementById('manualGeneralAmount').value);
+    const amount = window.getUnformattedValue('manualGeneralAmount');
     if (!amount || amount <= 0) { showNotif('Masukkan nominal yang valid.', 'error'); return; }
 
     const gen = getSavingsGeneral();
@@ -288,7 +288,7 @@ function deleteGoalHistory(hIndex) {
 
 function manualSaveGoal(type) {
     if (activeGoalIndex === null) return;
-    const amount = Number(document.getElementById('manualGoalAmount').value);
+    const amount = window.getUnformattedValue('manualGoalAmount');
     if (!amount || amount <= 0) { showNotif('Masukkan nominal yang valid.', 'error'); return; }
 
     const goals = getSavingsGoals();

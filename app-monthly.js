@@ -458,7 +458,7 @@ function handleFormSubmit(e) {
     const transaction = {
         id: Date.now(),
         type: document.getElementById('type').value,
-        amount: parseFloat(document.getElementById('amount').value),
+        amount: window.getUnformattedValue('amount'),
         category: document.getElementById('category').value,
         date: document.getElementById('date').value,
         description: document.getElementById('description').value,
@@ -875,7 +875,7 @@ function renderBudgetForm() {
     container.innerHTML = cats.map(cat => `
         <div class="form-group">
             <label>${getCategoryEmoji(cat)} ${cat.charAt(0).toUpperCase() + cat.slice(1)}</label>
-            <input type="number" value="${budgets[cat]}" onchange="updateBudget('${cat}', this.value)">
+            <input type="text" inputmode="numeric" value="${Number(budgets[cat] || 0).toLocaleString('id-ID')}" oninput="formatCurrencyInput(event)" onchange="updateBudget('${cat}', this.value)">
             <div id="budget-${cat}-status" style="margin-top: 8px; font-size: 0.9rem;"></div>
         </div>
     `).join('');
@@ -884,7 +884,7 @@ function renderBudgetForm() {
 }
 
 function updateBudget(category, value) {
-    budgets[category] = parseInt(value) || 0;
+    budgets[category] = parseInt(String(value).replace(/[^0-9]/g, '')) || 0;
     localStorage.setItem('budgets', JSON.stringify(budgets));
     updateBudgetStatus();
 }

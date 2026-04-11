@@ -26,9 +26,22 @@
         }
         .pct-label { min-width: 110px; font-size: 0.9rem; color: var(--text-secondary); }
         .pct-row input[type="range"] { flex: 1; cursor: pointer; accent-color: var(--accent-primary); }
-        .pct-display {
-            min-width: 48px; text-align: right; font-weight: 700;
-            font-size: 0.95rem; color: var(--text-primary);
+        .pct-input-wrap {
+            display: flex; align-items: center; gap: 4px;
+            min-width: 76px; flex-shrink: 0;
+        }
+        .pct-input {
+            width: 56px; padding: 6px 8px; border-radius: 8px;
+            border: 1px solid var(--border); background: var(--bg-primary);
+            color: var(--text-primary); font-weight: 700; font-size: 0.95rem;
+            text-align: right; font-family: inherit;
+            -moz-appearance: textfield;
+        }
+        .pct-input::-webkit-outer-spin-button,
+        .pct-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .pct-suffix {
+            font-weight: 700; font-size: 0.95rem; color: var(--text-secondary);
+            user-select: none;
         }
         .warning-badge {
             background: rgba(237,137,54,0.2); color: var(--warning);
@@ -67,7 +80,20 @@
         }
         .sub-pct-row label { min-width: 110px; font-size: 0.85rem; color: var(--text-secondary); }
         .sub-pct-row input[type="range"] { flex: 1; accent-color: var(--danger); cursor: pointer; }
-        .sub-pct-display { min-width: 40px; text-align: right; font-weight: 700; font-size: 0.85rem; }
+        .sub-pct-input-wrap {
+            display: flex; align-items: center; gap: 4px;
+            min-width: 68px; flex-shrink: 0;
+        }
+        .sub-pct-input {
+            width: 50px; padding: 5px 6px; border-radius: 8px;
+            border: 1px solid var(--border); background: var(--bg-primary);
+            color: var(--text-primary); font-weight: 700; font-size: 0.85rem;
+            text-align: right; font-family: inherit;
+            -moz-appearance: textfield;
+        }
+        .sub-pct-input::-webkit-outer-spin-button,
+        .sub-pct-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .sub-pct-suffix { font-weight: 700; font-size: 0.85rem; color: var(--text-secondary); user-select: none; }
         .sub-warning { color: var(--warning); font-size: 0.8rem; font-weight: 600; display: none; }
         .sub-warning.visible { display: block; margin-top: 4px; }
 
@@ -114,7 +140,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Nominal Pendapatan (Rp)</label>
-                    <input type="number" id="incomeInput" placeholder="cth: 5000000" oninput="calculate()">
+                    <input type="text" inputmode="numeric" id="incomeInput" placeholder="cth: 5000000" oninput="formatCurrencyInput(event);calculate()">
                 </div>
                 <div class="form-group">
                     <label>Siklus</label>
@@ -138,21 +164,33 @@
 
             <div class="pct-row">
                 <span class="pct-label">🛒 Kebutuhan</span>
-                <input type="range" id="needsPct" min="0" max="100" value="50" oninput="syncSlider('needs');calculate()">
-                <span class="pct-display" id="needsPctDisplay">50%</span>
+                <input type="range" id="needsPct" min="0" max="100" value="50" oninput="syncSlider();calculate()">
+                <div class="pct-input-wrap">
+                    <input type="number" class="pct-input" id="needsPctInput" min="0" max="100" step="1" value="50" inputmode="numeric" title="Ketik persentase (0–100)"
+                        oninput="setLevel1PctFromInput('needs')" onblur="finalizeLevel1PctInput('needs')">
+                    <span class="pct-suffix">%</span>
+                </div>
             </div>
             <div class="pct-row">
                 <span class="pct-label">🎉 Keinginan</span>
-                <input type="range" id="wantsPct" min="0" max="100" value="30" oninput="syncSlider('wants');calculate()">
-                <span class="pct-display" id="wantsPctDisplay">30%</span>
+                <input type="range" id="wantsPct" min="0" max="100" value="30" oninput="syncSlider();calculate()">
+                <div class="pct-input-wrap">
+                    <input type="number" class="pct-input" id="wantsPctInput" min="0" max="100" step="1" value="30" inputmode="numeric" title="Ketik persentase (0–100)"
+                        oninput="setLevel1PctFromInput('wants')" onblur="finalizeLevel1PctInput('wants')">
+                    <span class="pct-suffix">%</span>
+                </div>
             </div>
             <div class="pct-row">
                 <span class="pct-label">💰 Tabungan</span>
-                <input type="range" id="savingPct" min="0" max="100" value="20" oninput="syncSlider('saving');calculate()">
-                <span class="pct-display" id="savingPctDisplay">20%</span>
+                <input type="range" id="savingPct" min="0" max="100" value="20" oninput="syncSlider();calculate()">
+                <div class="pct-input-wrap">
+                    <input type="number" class="pct-input" id="savingPctInput" min="0" max="100" step="1" value="20" inputmode="numeric" title="Ketik persentase (0–100)"
+                        oninput="setLevel1PctFromInput('saving')" onblur="finalizeLevel1PctInput('saving')">
+                    <span class="pct-suffix">%</span>
+                </div>
             </div>
 
-            <div class="warning-badge" id="l1Warning">⚠️ Total persentase belum 100%! Sesuaikan slider.</div>
+            <div class="warning-badge" id="l1Warning">⚠️ Total persentase belum 100%! Sesuaikan angka di kolom kanan (atau slider) agar jumlahnya tepat 100%.</div>
         </div>
 
         <!-- ── STEP 3: Needs Breakdown ── -->
@@ -164,20 +202,32 @@
             <div class="sub-pct-row">
                 <label>🍔 Makanan</label>
                 <input type="range" id="foodPct" min="0" max="100" value="50" oninput="syncSubSlider();calculate()">
-                <span class="sub-pct-display" id="foodPctDisplay">50%</span>
+                <div class="sub-pct-input-wrap">
+                    <input type="number" class="sub-pct-input" id="foodPctInput" min="0" max="100" step="1" value="50" inputmode="numeric" title="Ketik persentase (0–100)"
+                        oninput="setSubPctFromInput('food')" onblur="finalizeSubPctInput('food')">
+                    <span class="sub-pct-suffix">%</span>
+                </div>
             </div>
             <div class="sub-pct-row">
                 <label>🚗 Transport</label>
                 <input type="range" id="transPct" min="0" max="100" value="25" oninput="syncSubSlider();calculate()">
-                <span class="sub-pct-display" id="transPctDisplay">25%</span>
+                <div class="sub-pct-input-wrap">
+                    <input type="number" class="sub-pct-input" id="transPctInput" min="0" max="100" step="1" value="25" inputmode="numeric" title="Ketik persentase (0–100)"
+                        oninput="setSubPctFromInput('trans')" onblur="finalizeSubPctInput('trans')">
+                    <span class="sub-pct-suffix">%</span>
+                </div>
             </div>
             <div class="sub-pct-row">
                 <label>🏥 Kesehatan</label>
                 <input type="range" id="healthPct" min="0" max="100" value="25" oninput="syncSubSlider();calculate()">
-                <span class="sub-pct-display" id="healthPctDisplay">25%</span>
+                <div class="sub-pct-input-wrap">
+                    <input type="number" class="sub-pct-input" id="healthPctInput" min="0" max="100" step="1" value="25" inputmode="numeric" title="Ketik persentase (0–100)"
+                        oninput="setSubPctFromInput('health')" onblur="finalizeSubPctInput('health')">
+                    <span class="sub-pct-suffix">%</span>
+                </div>
             </div>
 
-            <div class="sub-warning" id="l2Warning">⚠️ Total rincian kebutuhan belum 100%!</div>
+            <div class="sub-warning" id="l2Warning">⚠️ Total rincian kebutuhan belum 100%! Sesuaikan angka (atau slider).</div>
         </div>
 
         <!-- ── OUTPUT ── -->

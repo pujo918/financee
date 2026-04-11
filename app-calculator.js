@@ -6,43 +6,98 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ========== SLIDER SYNC – Level 1 ==========
-// Which slider was last moved locks the others proportionally
-function syncSlider(changed) {
-    const ids = ['needs', 'wants', 'saving'];
+function syncSlider() {
     const values = {
-        needs:  parseInt(document.getElementById('needsPct').value),
-        wants:  parseInt(document.getElementById('wantsPct').value),
-        saving: parseInt(document.getElementById('savingPct').value),
+        needs:  parseInt(document.getElementById('needsPct').value, 10),
+        wants:  parseInt(document.getElementById('wantsPct').value, 10),
+        saving: parseInt(document.getElementById('savingPct').value, 10),
     };
 
-    // Show current value immediately
-    document.getElementById('needsPctDisplay').textContent  = values.needs  + '%';
-    document.getElementById('wantsPctDisplay').textContent  = values.wants  + '%';
-    document.getElementById('savingPctDisplay').textContent = values.saving + '%';
+    document.getElementById('needsPctInput').value  = values.needs;
+    document.getElementById('wantsPctInput').value  = values.wants;
+    document.getElementById('savingPctInput').value = values.saving;
 
     const total = values.needs + values.wants + values.saving;
     const warn = document.getElementById('l1Warning');
     if (warn) warn.classList.toggle('visible', total !== 100);
 }
 
-// ========== SLIDER SYNC – Level 2 ==========
-function syncSubSlider() {
-    const f = parseInt(document.getElementById('foodPct').value);
-    const t = parseInt(document.getElementById('transPct').value);
-    const h = parseInt(document.getElementById('healthPct').value);
+function setLevel1PctFromInput(key) {
+    const input = document.getElementById(key + 'PctInput');
+    const range = document.getElementById(key + 'Pct');
+    const raw = String(input.value).trim();
+    if (raw === '' || raw === '-') return;
 
-    document.getElementById('foodPctDisplay').textContent   = f + '%';
-    document.getElementById('transPctDisplay').textContent  = t + '%';
-    document.getElementById('healthPctDisplay').textContent = h + '%';
+    let v = parseInt(raw, 10);
+    if (Number.isNaN(v)) v = 0;
+    v = Math.max(0, Math.min(100, v));
+    input.value = v;
+    range.value = String(v);
+    syncSlider();
+    calculate();
+}
+
+function finalizeLevel1PctInput(key) {
+    const input = document.getElementById(key + 'PctInput');
+    const range = document.getElementById(key + 'Pct');
+    const raw = String(input.value).trim();
+    if (raw === '' || raw === '-') {
+        input.value = 0;
+        range.value = '0';
+    }
+    syncSlider();
+    calculate();
+}
+
+// ========== SLIDER SYNC – Level 2 ==========
+const SUB_PCT_KEYS = ['food', 'trans', 'health'];
+
+function syncSubSlider() {
+    const f = parseInt(document.getElementById('foodPct').value, 10);
+    const t = parseInt(document.getElementById('transPct').value, 10);
+    const h = parseInt(document.getElementById('healthPct').value, 10);
+
+    document.getElementById('foodPctInput').value   = f;
+    document.getElementById('transPctInput').value  = t;
+    document.getElementById('healthPctInput').value = h;
 
     const total = f + t + h;
     const warn = document.getElementById('l2Warning');
     if (warn) warn.classList.toggle('visible', total !== 100);
 }
 
+function setSubPctFromInput(key) {
+    if (!SUB_PCT_KEYS.includes(key)) return;
+    const input = document.getElementById(key + 'PctInput');
+    const range = document.getElementById(key + 'Pct');
+    const raw = String(input.value).trim();
+    if (raw === '' || raw === '-') return;
+
+    let v = parseInt(raw, 10);
+    if (Number.isNaN(v)) v = 0;
+    v = Math.max(0, Math.min(100, v));
+    input.value = v;
+    range.value = String(v);
+    syncSubSlider();
+    calculate();
+}
+
+function finalizeSubPctInput(key) {
+    if (!SUB_PCT_KEYS.includes(key)) return;
+    const input = document.getElementById(key + 'PctInput');
+    const range = document.getElementById(key + 'Pct');
+    const raw = String(input.value).trim();
+    if (raw === '' || raw === '-') {
+        input.value = 0;
+        range.value = '0';
+    }
+    syncSubSlider();
+    calculate();
+}
+
 // ========== CALCULATE ==========
 function calculate() {
-    const rawIncome = Number(document.getElementById('incomeInput').value) || 0;
+    const rawIncome = window.getUnformattedValue('incomeInput');
     const cycle     = document.getElementById('cycleSelect').value;
     const monthly   = cycle === 'weekly' ? rawIncome * 4 : rawIncome;
 
@@ -90,13 +145,12 @@ function calculate() {
     document.getElementById('outTransPct').textContent  = transPct;
     document.getElementById('outHealthPct').textContent = healthPct;
 
-    // ── Slider display labels ──
-    document.getElementById('needsPctDisplay').textContent  = needsPct  + '%';
-    document.getElementById('wantsPctDisplay').textContent  = wantsPct  + '%';
-    document.getElementById('savingPctDisplay').textContent = savingPct + '%';
-    document.getElementById('foodPctDisplay').textContent   = foodPct   + '%';
-    document.getElementById('transPctDisplay').textContent  = transPct  + '%';
-    document.getElementById('healthPctDisplay').textContent = healthPct + '%';
+    document.getElementById('needsPctInput').value  = needsPct;
+    document.getElementById('wantsPctInput').value  = wantsPct;
+    document.getElementById('savingPctInput').value = savingPct;
+    document.getElementById('foodPctInput').value   = foodPct;
+    document.getElementById('transPctInput').value  = transPct;
+    document.getElementById('healthPctInput').value = healthPct;
 
     // ── Bar chart ──
     const barNeeds  = document.getElementById('barNeeds');

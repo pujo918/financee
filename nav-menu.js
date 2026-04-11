@@ -403,3 +403,33 @@
         setTimeout(initDesktopControls, 120);
     });
 })();
+
+window.formatCurrencyInput = function(e) {
+    let input = e.target;
+    if (input.type === 'number') {
+        input.type = 'text';
+        input.inputMode = 'numeric';
+    }
+    let cursorPosition = input.selectionStart;
+    let oldVal = input.value;
+    
+    let value = oldVal.replace(/[^0-9]/g, '');
+    if (value === '') {
+        input.value = '';
+        return;
+    }
+    let formatted = parseInt(value, 10).toLocaleString('id-ID');
+    input.value = formatted;
+    
+    try {
+        let newCursorPosition = cursorPosition + (formatted.length - oldVal.length);
+        if(newCursorPosition < 0) newCursorPosition = 0;
+        input.setSelectionRange(newCursorPosition, newCursorPosition);
+    } catch (err) {}
+};
+
+window.getUnformattedValue = function(elementId) {
+    let el = document.getElementById(elementId);
+    if (!el) return 0;
+    return Number(el.value.replace(/[^0-9]/g, '')) || 0;
+};
