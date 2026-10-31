@@ -4,24 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#f97316">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Finance Tracker">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="images/icon-192.png">
+    <link rel="apple-touch-icon" href="images/icon-192.png">
     <title>Finance Tracker - Monthly View</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="naruto">
     <header>
         <div class="header-content">
-            <h1>💰 Finance Tracker</h1>
+            <h1>FINANCE TRACKER</h1>
             <nav class="main-nav">
                 <a href="index.html" class="nav-link active">Dashboard</a>
                 <a href="saving.html" class="nav-link">Savings</a>
                 <a href="calculator.html" class="nav-link">Planner</a>
             </nav>
             <div class="header-actions">
-                <button class="lang-toggle" id="langToggle">🇬🇧 EN</button>
-                <button class="theme-toggle" id="themeToggle">🌙</button>
+                <button type="button" class="install-app-btn" onclick="triggerPwaInstall()" style="display:none;" title="Install ke Layar HP/Desktop">
+                    <svg class="ui-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>Install</span>
+                </button>
+                <button class="lang-toggle" id="langToggle">ID</button>
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"></button>
             </div>
         </div>
     </header>
@@ -34,7 +45,10 @@
         <!-- Month Selector -->
         <div class="month-selector">
             <div class="month-selector-left">
-                <label>📅 View Period:</label>
+                <label style="display:inline-flex;align-items:center;gap:6px;">
+                    <svg class="ui-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <span>View Period:</span>
+                </label>
                 <select id="monthSelect">
                     <!-- Populated by JS -->
                 </select>
@@ -43,15 +57,21 @@
                 </select>
             </div>
             <div class="view-toggle">
-                <button class="view-btn active" id="monthlyViewBtn" onclick="switchView('monthly')">📊 This Month</button>
-                <button class="view-btn" id="alltimeViewBtn" onclick="switchView('alltime')">🌍 All Time</button>
+                <button class="view-btn active" id="monthlyViewBtn" onclick="switchView('monthly')">
+                    <svg class="ui-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+                    <span>This Month</span>
+                </button>
+                <button class="view-btn" id="alltimeViewBtn" onclick="switchView('alltime')">
+                    <svg class="ui-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    <span>All Time</span>
+                </button>
             </div>
         </div>
 
         <!-- Monthly Dashboard -->
         <div id="monthlyDashboard" class="dashboard-section">
             <div class="section-title">
-                <span>📊 Monthly Summary</span>
+                <span style="display:inline-flex;align-items:center;gap:8px;">Monthly Summary</span>
                 <span class="section-badge" id="currentMonthBadge">Current Month</span>
             </div>
             <div class="dashboard">
@@ -69,7 +89,7 @@
                     <div class="card-title">Net Balance</div>
                     <div class="card-value" id="monthlyNet">Rp 0</div>
                     <div class="health-indicator" id="monthlyHealthIndicator">
-                        <span>🟢</span> <span>Positive flow!</span>
+                        <span>●</span> <span>Positive flow</span>
                     </div>
                 </div>
                 <div class="card rate-card">
@@ -83,7 +103,7 @@
         <!-- All-Time Dashboard -->
         <div id="alltimeDashboard" class="dashboard-section hidden">
             <div class="section-title">
-                <span>🌍 All-Time Summary</span>
+                <span style="display:inline-flex;align-items:center;gap:8px;">All-Time Summary</span>
                 <span class="section-badge">Complete History</span>
             </div>
             <div class="dashboard">
@@ -101,7 +121,7 @@
                     <div class="card-title">Overall Balance</div>
                     <div class="card-value" id="alltimeBalance">Rp 0</div>
                     <div class="health-indicator" id="alltimeHealthIndicator">
-                        <span>🟢</span> <span>You're doing well!</span>
+                        <span>●</span> <span>Positive balance</span>
                     </div>
                 </div>
                 <div class="card rate-card">
@@ -112,40 +132,72 @@
             </div>
         </div>
 
+        <!-- Integrated Savings & Free Cash Summary Bar -->
+        <div class="free-cash-bar" id="freeCashSummaryBar" style="margin-bottom:30px;">
+            <div class="free-cash-item">
+                <span class="cat-icon-badge cat-icon-badge--bills">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2h0V5z"/><circle cx="13" cy="11" r="1"/></svg>
+                </span>
+                <div>
+                    <div style="font-size:0.78rem;color:var(--text-secondary);">Total Tabungan (Umum + Tujuan)</div>
+                    <strong id="dashboardAllocatedSavings" style="color:var(--accent-secondary);">Rp 0</strong>
+                </div>
+            </div>
+            <div class="free-cash-item">
+                <span class="cat-icon-badge cat-icon-badge--salary">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+                </span>
+                <div>
+                    <div style="font-size:0.78rem;color:var(--text-secondary);">Saldo Bebas (Overall Net − Tabungan)</div>
+                    <strong id="dashboardFreeCash" style="color:var(--success);">Rp 0</strong>
+                </div>
+            </div>
+            <a href="saving.html" style="color:var(--accent-primary);text-decoration:none;font-weight:600;font-size:0.85rem;">Kelola Tabungan →</a>
+        </div>
+
         <!-- Voice Input -->
         <div class="voice-section">
             <div class="voice-language-badge">
-                <span>🌐</span>
+                <svg class="ui-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 <span id="voiceLangDisplay">English + Indonesian</span>
             </div>
-            <h2 style="margin-bottom: 10px;">🎤 Voice Input</h2>
+            <h2 style="margin-bottom: 10px; display:flex; align-items:center; justify-content:center; gap:8px;">Voice Input</h2>
             <p style="margin-bottom: 20px; opacity: 0.9; font-size: 0.95rem;">
-                Speak naturally - full description captured!
+                Speak naturally — full description captured!
             </p>
             <button class="voice-button" id="voiceButton">
                 <img src="" alt="Theme Avatar" class="voice-avatar" id="voiceAvatar" />
             </button>
             <div class="voice-status" id="voiceStatus">Tap to start</div>
             <div class="voice-result" id="voiceResult"></div>
-            <div class="voice-suggestions" id="voiceSuggestions">
-                <span class="voice-suggestion" data-text="I buy coffee twenty thousand">💡 "I buy coffee 20k"</span>
-                <span class="voice-suggestion" data-text="Lunch fifty thousand">💡 "Lunch 50k"</span>
-                <span class="voice-suggestion" data-text="Got three hundred k freelance">💡 "Got 300k"</span>
-            </div>
+            <div class="voice-suggestions" id="voiceSuggestions"></div>
         </div>
 
         <!-- Tabs -->
         <div class="tabs">
-            <button class="tab active" data-tab="add">➕ Add</button>
-            <button class="tab" data-tab="transactions">📋 History</button>
-            <button class="tab" data-tab="analytics">📊 Analytics</button>
-            <button class="tab" data-tab="budget">💳 Budget</button>
+            <button class="tab active" data-tab="add">
+                <svg class="ui-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Add</span>
+            </button>
+            <button class="tab" data-tab="transactions">
+                <svg class="ui-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/><polyline points="12 7 12 12 15 15"/></svg>
+                <span>History</span>
+            </button>
+            <button class="tab" data-tab="analytics">
+                <svg class="ui-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+                <span>Analytics</span>
+            </button>
+            <button class="tab" data-tab="budget">
+                <svg class="ui-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+                <span>Budget</span>
+            </button>
         </div>
 
         <!-- Add Transaction -->
         <div id="addTab" class="tab-content active">
             <div class="transaction-form">
-                <h2 style="margin-bottom: 20px;">Add Transaction</h2>
+                <h2 style="margin-bottom: 18px;">Add Transaction</h2>
+
                 <form id="transactionForm">
                     <div class="form-row">
                         <div class="form-group">
@@ -157,31 +209,35 @@
                         </div>
                         <div class="form-group">
                             <label>Amount (Rp)</label>
-                            <input type="text" inputmode="numeric" id="amount" placeholder="50000" required oninput="formatCurrencyInput(event)">
+                            <input type="text" inputmode="numeric" id="amount" placeholder="50.000" required oninput="formatCurrencyInput(event)">
                         </div>
                     </div>
+
+                    <div class="form-group">
+                        <label id="categoryPickerLabel">Category (Expense)</label>
+                        <input type="hidden" id="category" value="food" required>
+                        <div class="category-picker-grid" id="categoryPickerGrid">
+                            <!-- Populated with custom SVG icon badges by app-monthly.js -->
+                        </div>
+                    </div>
+
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Category</label>
-                            <select id="category" required>
-                                <option value="food">🍔 Food</option>
-                                <option value="transport">🚗 Transport</option>
-                                <option value="bills">💡 Bills</option>
-                                <option value="study">📚 Study</option>
-                                <option value="entertainment">🎮 Entertainment</option>
-                                <option value="shopping">🛍️ Shopping</option>
-                                <option value="health">🏥 Health</option>
-                                <option value="other">📦 Other</option>
-                            </select>
+                            <label>Date</label>
+                            <input type="hidden" id="date" required>
+                            <div class="datepicker-wrapper">
+                                <div class="datepicker-trigger" id="dateTrigger" onclick="toggleMiniCalendar(event, 'date', { minToday: false })">
+                                    <span id="dateLabel">Pilih tanggal...</span>
+                                    <span class="datepicker-trigger-icon">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label>Date</label>
-                            <input type="date" id="date" required>
+                            <label>Description (Optional)</label>
+                            <input type="text" id="description" placeholder="Notes">
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Description (Optional)</label>
-                        <textarea id="description" rows="2" placeholder="Notes"></textarea>
                     </div>
                     <button type="submit">Add Transaction</button>
                 </form>
@@ -191,10 +247,39 @@
         <!-- Transactions -->
         <div id="transactionsTab" class="tab-content">
             <div class="transactions-section">
-                <h2 style="margin-bottom: 20px;">Transactions <span id="transactionsPeriod" style="color: var(--text-secondary); font-size: 0.9rem;"></span></h2>
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+                    <h2>Transactions <span id="transactionsPeriod" style="color: var(--text-secondary); font-size: 0.9rem;"></span></h2>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <button type="button" class="btn-secondary" id="exportCsvBtn" style="padding:8px 14px;font-size:0.85rem;">
+                            ↓ Export CSV
+                        </button>
+                        <button type="button" class="btn-secondary" id="backupJsonBtn" style="padding:8px 14px;font-size:0.85rem;">
+                            ↓ Full Backup (JSON)
+                        </button>
+                        <label class="btn-secondary" style="padding:8px 14px;font-size:0.85rem;border-radius:8px;cursor:pointer;margin-bottom:0;display:inline-flex;align-items:center;">
+                            ↑ Restore JSON
+                            <input type="file" id="restoreJsonInput" accept=".json" style="display:none;">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Search & Filter Toolbar -->
+                <div class="history-toolbar">
+                    <input type="text" id="txnSearchInput" placeholder="Search description, category, or amount...">
+                    <select id="txnTypeFilter">
+                        <option value="all">All Types</option>
+                        <option value="expense">Expense Only</option>
+                        <option value="income">Income Only</option>
+                    </select>
+                    <select id="txnCategoryFilter">
+                        <option value="all">All Categories</option>
+                    </select>
+                    <button type="button" class="btn-secondary" id="txnResetFilterBtn" style="padding:10px 14px;font-size:0.85rem;">Reset</button>
+                </div>
+
                 <details style="margin-bottom: 20px;">
                     <summary style="cursor: pointer; user-select: none; color: var(--text-secondary); font-weight: 600;">
-                        Restore / Import (Spreadsheet)
+                        Restore / Import (Spreadsheet TSV/CSV)
                     </summary>
                     <div style="margin-top: 12px; padding: 15px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg-primary);">
                         <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 12px;">
@@ -220,7 +305,8 @@
         <!-- Analytics -->
         <div id="analyticsTab" class="tab-content">
             <div class="chart-container">
-                <h2 style="margin-bottom: 20px;">Spending by Category <span id="analyticsPeriod" style="color: var(--text-secondary); font-size: 0.9rem;"></span></h2>
+                <h2 style="margin-bottom: 16px;">Financial Insights & Analytics <span id="analyticsPeriod" style="color: var(--text-secondary); font-size: 0.9rem;"></span></h2>
+                <div id="smartInsightsPanel" class="smart-insights-grid" style="margin-bottom: 22px;"></div>
                 <div class="charts-grid">
                     <div class="chart-card">
                         <div class="chart-card-title">Expense by Category</div>
@@ -249,7 +335,7 @@
                 </div>
                 <div id="categoryBreakdown"></div>
                 <div class="spreadsheet-link-container">
-                    <a class="spreadsheet-link" href="https://docs.google.com/spreadsheets/d/15wMFyEc_tjOyCcbf7ILlQrWLJlLfi3lWNqsRMl563GA/edit?usp=sharing" target="_blank" rel="noopener noreferrer">📄 Open Spreadsheet</a>
+                    <a class="spreadsheet-link" href="https://docs.google.com/spreadsheets/d/15wMFyEc_tjOyCcbf7ILlQrWLJlLfi3lWNqsRMl563GA/edit?usp=sharing" target="_blank" rel="noopener noreferrer">↗ Open Spreadsheet</a>
                 </div>
             </div>
         </div>
@@ -257,9 +343,104 @@
         <!-- Budget -->
         <div id="budgetTab" class="tab-content">
             <div class="transaction-form">
-                <h2 style="margin-bottom: 20px;">Monthly Budget</h2>
-                <p style="margin-bottom: 20px; color: var(--text-secondary);">Set limits per category</p>
-                <div id="budgetForm"></div>
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;margin-bottom:20px;">
+                    <div style="max-width:640px;">
+                        <h2 style="margin-bottom: 4px;">Budget & Prioritas Kebutuhan</h2>
+                        <p style="color: var(--text-secondary);font-size:0.86rem;line-height:1.45;">
+                            Susun item pengeluaran spesifikmu beserta skala prioritasnya. Kategori yang kosong otomatis disembunyikan & tersinkron ke Planner.
+                        </p>
+                    </div>
+                    <a href="calculator.html" style="color:var(--accent-primary);text-decoration:none;font-weight:700;font-size:0.85rem;padding:9px 15px;border:1.5px solid var(--accent-primary);border-radius:10px;white-space:nowrap;">
+                        Buka Budget Planner →
+                    </a>
+                </div>
+
+                <!-- Automatic Calculator & Priority Tier Summary Card -->
+                <div id="budgetSummaryCard"></div>
+
+                <!-- Clean 2-Row Item Builder Card -->
+                <div class="budget-builder-card">
+                    <div class="budget-builder-header">
+                        <div class="budget-builder-title" id="budgetBuilderFormTitle">
+                            <span class="cat-icon-badge cat-icon-badge--bills" style="width:24px;height:24px;">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            </span>
+                            <span>Tambah Item Kebutuhan / Langganan</span>
+                        </div>
+                        <button type="button" id="budgetCancelEditBtn" class="preset-mini-btn" style="display:none;color:var(--danger);border-color:var(--danger);" onclick="cancelEditBudgetItem()">
+                            ✕ Batal Edit
+                        </button>
+                    </div>
+
+                    <input type="hidden" id="editingBudgetItemId" value="">
+
+                    <div class="budget-form-grid-top">
+                        <div class="budget-field">
+                            <label>Nama Kebutuhan / Langganan</label>
+                            <input type="text" id="newBudgetItemName" placeholder="cth: Langganan Gemini, Makan Harian, Kost">
+                        </div>
+                        <div class="budget-field">
+                            <label>Kategori Pos</label>
+                            <select id="newBudgetItemCat">
+                                <option value="food">Food (Makanan)</option>
+                                <option value="transport">Transport</option>
+                                <option value="bills">Bills (Tagihan)</option>
+                                <option value="study">Study / Produktif</option>
+                                <option value="entertainment">Entertainment</option>
+                                <option value="shopping">Shopping (Belanja)</option>
+                                <option value="health">Health (Kesehatan)</option>
+                                <option value="other">Other (Lainnya)</option>
+                            </select>
+                        </div>
+                        <div class="budget-field">
+                            <label>Skala Prioritas</label>
+                            <select id="newBudgetItemTier">
+                                <option value="1">Prioritas 1 — Wajib (Utama)</option>
+                                <option value="2">Prioritas 2 — Penting (Produktif)</option>
+                                <option value="3">Prioritas 3 — Keinginan (Fleksibel)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="budget-form-grid-bottom">
+                        <div class="budget-field">
+                            <label>Nominal (Rp)</label>
+                            <input type="text" id="newBudgetItemAmount" inputmode="numeric" placeholder="cth: 330.000" oninput="formatCurrencyInput(event)">
+                        </div>
+                        <div class="budget-field">
+                            <label>Siklus Hitung</label>
+                            <select id="newBudgetItemCycle">
+                                <option value="monthly">Bulanan (×1)</option>
+                                <option value="weekly">Mingguan (×4)</option>
+                                <option value="daily">Harian (×30)</option>
+                                <option value="yearly">Tahunan (÷12)</option>
+                            </select>
+                        </div>
+                        <div class="budget-field">
+                            <label>Jenis Pelacakan</label>
+                            <select id="newBudgetItemType">
+                                <option value="quota">Kuota Transaksi Rutin</option>
+                                <option value="subscription">Tagihan / Langganan Tetap</option>
+                            </select>
+                        </div>
+                        <button type="button" class="budget-submit-btn" id="budgetSubmitItemBtn" onclick="handleAddCustomBudgetItem()">
+                            + Tambah Item
+                        </button>
+                    </div>
+
+                    <div class="budget-presets-strip">
+                        <span class="budget-presets-label">Tambah cepat:</span>
+                        <button type="button" class="preset-mini-btn" onclick="quickAddBudgetPreset('Langganan Gemini / AI', 'study', 1, 'subscription', 330000, 'monthly')">+ Langganan Gemini</button>
+                        <button type="button" class="preset-mini-btn" onclick="quickAddBudgetPreset('Makan & Minum Harian', 'food', 1, 'quota', 40000, 'daily')">+ Makan Harian</button>
+                        <button type="button" class="preset-mini-btn" onclick="quickAddBudgetPreset('WiFi & Listrik', 'bills', 1, 'subscription', 350000, 'monthly')">+ WiFi & Listrik</button>
+                        <button type="button" class="preset-mini-btn" onclick="quickAddBudgetPreset('Bensin & Ojol', 'transport', 1, 'quota', 75000, 'weekly')">+ Transport</button>
+                        <button type="button" class="preset-mini-btn" onclick="quickAddBudgetPreset('Kesehatan & Suplemen', 'health', 2, 'quota', 150000, 'monthly')">+ Kesehatan</button>
+                        <button type="button" class="preset-mini-btn" onclick="quickAddBudgetPreset('Belanja / Wishlist', 'shopping', 3, 'quota', 300000, 'monthly')">+ Belanja</button>
+                    </div>
+                </div>
+
+                <!-- Active Budget Categories & Their Clean Line Items -->
+                <div id="budgetForm" class="budget-categories-grid"></div>
             </div>
         </div>
     </div>
@@ -268,38 +449,72 @@
     <div id="confirmModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-icon">✅</div>
+                <div class="modal-icon-badge">✓</div>
                 <div>
                     <h2>Confirm Transaction</h2>
                     <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 5px;">Verify before saving</p>
                 </div>
             </div>
-            <div class="confirm-details">
-                <div class="confirm-item">
-                    <span class="confirm-label">Type</span>
-                    <span class="confirm-value" id="confirmType"></span>
-                </div>
-                <div class="confirm-item">
-                    <span class="confirm-label">Amount</span>
-                    <span class="confirm-value" id="confirmAmount"></span>
-                </div>
-                <div class="confirm-item">
-                    <span class="confirm-label">Category</span>
-                    <span class="confirm-value" id="confirmCategory"></span>
-                </div>
-                <div class="confirm-item">
-                    <span class="confirm-label">Date</span>
-                    <span class="confirm-value" id="confirmDate"></span>
-                </div>
-                <div class="confirm-item">
-                    <span class="confirm-label">Description</span>
-                    <span class="confirm-value" id="confirmDescription"></span>
-                </div>
-            </div>
+            <div class="confirm-details"></div>
             <div class="modal-actions">
                 <button class="btn-success" id="confirmSaveBtn">✓ Save</button>
-                <button class="btn-secondary" id="confirmCancelBtn">✗ Cancel</button>
+                <button class="btn-secondary" id="confirmCancelBtn">✕ Cancel</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Edit Transaction Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon-badge">✎</div>
+                <div>
+                    <h2>Edit Transaction</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 5px;">Update transaction details</p>
+                </div>
+            </div>
+            <form id="editTransactionForm">
+                <input type="hidden" id="editTxnId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="editType" required>
+                            <option value="expense">Expense</option>
+                            <option value="income">Income</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Amount (Rp)</label>
+                        <input type="text" inputmode="numeric" id="editAmount" required oninput="formatCurrencyInput(event)">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="editCategory" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="hidden" id="editDate" required>
+                        <div class="datepicker-wrapper">
+                            <div class="datepicker-trigger" id="editDateTrigger" onclick="toggleMiniCalendar(event, 'editDate', { minToday: false })">
+                                <span id="editDateLabel">Pilih tanggal...</span>
+                                <span class="datepicker-trigger-icon">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="editDescription" placeholder="Notes">
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-success">✓ Save Changes</button>
+                    <button type="button" class="btn-secondary" onclick="closeEditModal()">✕ Cancel</button>
+                </div>
+            </form>
         </div>
     </div>
 

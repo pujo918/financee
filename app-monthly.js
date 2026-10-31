@@ -5,103 +5,158 @@ var budgets = JSON.parse(localStorage.getItem('budgets')) || {
     entertainment: 200000, shopping: 300000, health: 200000, other: 200000
 };
 
+const EXPENSE_CATEGORIES = ['food', 'transport', 'bills', 'study', 'entertainment', 'shopping', 'health', 'other'];
+const INCOME_CATEGORIES  = ['salary', 'freelance', 'bonus', 'investment', 'gift', 'other'];
+const ALL_KNOWN_CATEGORIES = ['food', 'transport', 'bills', 'study', 'entertainment', 'shopping', 'health', 'salary', 'freelance', 'bonus', 'investment', 'gift', 'other'];
+
 let expenseCategoryChart;
 let monthlyExpenseChart;
 let incomeExpenseChart;
 let savingRateChart;
 
-// NEW: Month/Year selection state
+// Month/Year selection state
 let currentView = 'monthly'; // 'monthly' or 'alltime'
 let selectedMonth = new Date().getMonth();
 let selectedYear = new Date().getFullYear();
 
-function sendToSheet(data) {
-    fetch("https://script.google.com/macros/s/AKfycbyqnT0jfZwiKwQzM4NLM-zOUEIzL_9ZlsDg4_Bg8tLk9334A_eMIfAHgHG8IHUPSwzbRA/exec", {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(data),
-        keepalive: true
-    })
-    .then(() => {
-        console.log("Data sent to spreadsheet");
-    })
-    .catch(err => {
-        console.error("Failed to send:", err);
-    });
-}
-
-function buildSheetPayload(txn) {
-    const date = txn?.date || '';
-    return {
-        action: 'add',
-        id: txn?.id || '',
-        date,
-        month: typeof date === 'string' ? date.slice(0, 7) : '',
-        type: txn?.type || '',
-        category: txn?.category || '',
-        description: txn?.description || '',
-        amount: Number(txn?.amount) || 0,
-        source: txn?.method || ''
-    };
-}
-
-function buildSheetDeletePayload(id) {
-    return {
-        action: 'delete',
-        id
-    };
-}
-
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', function() {
-    loadTheme();
     setTodayDate();
+    renderCategoryPicker();
+    populateCategoryFilterDropdown();
     populateMonthYearSelectors();
     updateDashboards();
     renderTransactions();
-        renderBudgetForm();
+    renderBudgetForm();
     showDailyQuote();
     initEventListeners();
-    updateLangButton();
-    });
+    updatePeriodLabels();
+});
 
-function initEventListeners() {
-    document.getElementById('langToggle').addEventListener('click', toggleLanguage);
-    document.getElementById('voiceButton').addEventListener('click', toggleVoiceInput);
-    
-    document.querySelectorAll('.voice-suggestion').forEach(btn => {
-        btn.addEventListener('click', function() {
-            simulateVoice(this.getAttribute('data-text'));
+function formatCategoryName(cat) {
+    const s = String(cat || 'other');
+    return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function getCategoryBadge(cat) {
+    if (typeof window.getCategoryBadgeHtml === 'function') {
+        return window.getCategoryBadgeHtml(cat);
+    }
+    return '';
+}
+
+function renderCategoryPicker() {
+    const grid = document.getElementById('categoryPickerGrid');
+    const hiddenInput = document.getElementById('category');
+    const typeSelect = document.getElementById('type');
+    const labelEl = document.getElementById('categoryPickerLabel');
+    if (!grid || !hiddenInput) return;
+
+    const currentType = typeSelect ? typeSelect.value : 'expense';
+    const categories = currentType === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+
+    if (labelEl) {
+        labelEl.textContent = currentType === 'income' ? 'Category (Income)' : 'Category (Expense)';
+    }
+
+    if (!categories.includes(hiddenInput.value)) {
+        hiddenInput.value = categories[0];
+    }
+
+    const currentVal = hiddenInput.value;
+    grid.innerHTML = categories.map(cat => `
+        <div class="category-pill ${cat === currentVal ? 'active' : ''}" data-cat="${cat}">
+            ${getCategoryBadge(cat)}
+            <span>${formatCategoryName(cat)}</span>
+        </div>
+    `).join('');
+
+    grid.querySelectorAll('.category-pill').forEach(pill => {
+        pill.addEventListener('click', function() {
+            const selected = this.getAttribute('data-cat');
+            hiddenInput.value = selected;
+            grid.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
+            this.classList.add('active');
         });
     });
-    
+}
+
+function populateCategoryFilterDropdown() {
+    const filterEl = document.getElementById('txnCategoryFilter');
+    if (!filterEl) return;
+    filterEl.innerHTML = '<option value="all">All Categories</option>' +
+        ALL_KNOWN_CATEGORIES.map(c => `<option value="${c}">${formatCategoryName(c)}</option>`).join('');
+}
+
+function initEventListeners() {
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', function() {
             switchTab(this.getAttribute('data-tab'), this);
         });
     });
-    
-    document.getElementById('confirmSaveBtn').addEventListener('click', saveVoiceTransaction);
-    document.getElementById('confirmCancelBtn').addEventListener('click', closeConfirmModal);
+
+    const typeSelect = document.getElementById('type');
+    if (typeSelect) {
+        typeSelect.addEventListener('change', renderCategoryPicker);
+    }
+
     document.getElementById('transactionForm').addEventListener('submit', handleFormSubmit);
-    
+
     // Month/Year change listeners
     document.getElementById('monthSelect').addEventListener('change', function() {
-        selectedMonth = parseInt(this.value);
+        selectedMonth = parseInt(this.value, 10);
         updateDashboards();
         renderTransactions();
         updatePeriodLabels();
+        updateBudgetStatus();
         if (document.getElementById('analyticsTab')?.classList.contains('active')) renderAnalytics();
     });
-    
+
     document.getElementById('yearSelect').addEventListener('change', function() {
-        selectedYear = parseInt(this.value);
+        selectedYear = parseInt(this.value, 10);
         updateDashboards();
         renderTransactions();
         updatePeriodLabels();
+        updateBudgetStatus();
         if (document.getElementById('analyticsTab')?.classList.contains('active')) renderAnalytics();
     });
+
+    // Search & filter listeners
+    const searchInput = document.getElementById('txnSearchInput');
+    const typeFilter = document.getElementById('txnTypeFilter');
+    const catFilter = document.getElementById('txnCategoryFilter');
+    const resetFilterBtn = document.getElementById('txnResetFilterBtn');
+
+    if (searchInput) searchInput.addEventListener('input', renderTransactions);
+    if (typeFilter) typeFilter.addEventListener('change', renderTransactions);
+    if (catFilter) catFilter.addEventListener('change', renderTransactions);
+    if (resetFilterBtn) {
+        resetFilterBtn.addEventListener('click', () => {
+            if (searchInput) searchInput.value = '';
+            if (typeFilter) typeFilter.value = 'all';
+            if (catFilter) catFilter.value = 'all';
+            renderTransactions();
+        });
+    }
+
+    // Export CSV & Full Backup/Restore JSON
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const backupJsonBtn = document.getElementById('backupJsonBtn');
+    const restoreJsonInput = document.getElementById('restoreJsonInput');
+
+    if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportTransactionsCsv);
+    if (backupJsonBtn) backupJsonBtn.addEventListener('click', exportFullBackupJson);
+    if (restoreJsonInput) restoreJsonInput.addEventListener('change', handleRestoreJsonFile);
+
+    // Edit Modal listeners
+    const editTypeSelect = document.getElementById('editType');
+    if (editTypeSelect) {
+        editTypeSelect.addEventListener('change', () => populateEditCategoryOptions(editTypeSelect.value));
+    }
+    const editForm = document.getElementById('editTransactionForm');
+    if (editForm) {
+        editForm.addEventListener('submit', saveEditedTransaction);
+    }
 
     const importMergeBtn = document.getElementById('importMergeBtn');
     const importReplaceBtn = document.getElementById('importReplaceBtn');
@@ -170,7 +225,11 @@ function parseDateFlexible(raw) {
     }
 
     const dt = new Date(s);
-    if (!Number.isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
+    if (!Number.isNaN(dt.getTime())) {
+        return typeof window.getLocalTodayStr === 'function'
+            ? window.getLocalTodayStr(dt)
+            : dt.toISOString().split('T')[0];
+    }
     return '';
 }
 
@@ -275,6 +334,7 @@ function importTransactionsFromText(replaceAll) {
     saveTransactions();
     updateDashboards();
     renderTransactions();
+    updateBudgetStatus();
     setImportStatus(`Imported ${parsed.length} transactions (${replaceAll ? 'replaced' : 'merged'}).`);
 }
 
@@ -282,10 +342,10 @@ function importTransactionsFromText(replaceAll) {
 function populateMonthYearSelectors() {
     const monthSelect = document.getElementById('monthSelect');
     const yearSelect = document.getElementById('yearSelect');
-    
+
     const months = ['January', 'February', 'March', 'April', 'May', 'June',
                     'July', 'August', 'September', 'October', 'November', 'December'];
-    
+
     months.forEach((month, index) => {
         const option = document.createElement('option');
         option.value = index;
@@ -293,7 +353,7 @@ function populateMonthYearSelectors() {
         if (index === selectedMonth) option.selected = true;
         monthSelect.appendChild(option);
     });
-    
+
     const currentYear = new Date().getFullYear();
     for (let year = currentYear; year >= currentYear - 5; year--) {
         const option = document.createElement('option');
@@ -307,7 +367,7 @@ function populateMonthYearSelectors() {
 // ========== VIEW SWITCHING ==========
 function switchView(view) {
     currentView = view;
-    
+
     if (view === 'monthly') {
         document.getElementById('monthlyViewBtn').classList.add('active');
         document.getElementById('alltimeViewBtn').classList.remove('active');
@@ -323,7 +383,7 @@ function switchView(view) {
         document.getElementById('monthSelect').disabled = true;
         document.getElementById('yearSelect').disabled = true;
     }
-    
+
     updateDashboards();
     renderTransactions();
     updatePeriodLabels();
@@ -337,11 +397,56 @@ function updateDashboards() {
     } else {
         updateAlltimeDashboard();
     }
+    updateFreeCashSummary();
+}
+
+function getTotalAllocatedSavings() {
+    let genTotal = 0;
+    let goalsTotal = 0;
+    try {
+        const rawGen = localStorage.getItem('savings_general');
+        if (rawGen) {
+            const parsed = JSON.parse(rawGen);
+            genTotal = typeof parsed === 'number' ? parsed : (Number(parsed.total) || 0);
+        }
+    } catch {}
+    try {
+        const rawGoals = localStorage.getItem('savings_goals');
+        if (rawGoals) {
+            const arr = JSON.parse(rawGoals);
+            if (Array.isArray(arr)) {
+                goalsTotal = arr.reduce((s, g) => s + (Number(g.current) || 0), 0);
+            }
+        }
+    } catch {}
+    return genTotal + goalsTotal;
+}
+
+function updateFreeCashSummary() {
+    const allIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    const allExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const overallBalance = allIncome - allExpense;
+    const totalSavings = getTotalAllocatedSavings();
+    const freeCash = overallBalance - totalSavings;
+
+    const allocEl = document.getElementById('dashboardAllocatedSavings');
+    const freeEl = document.getElementById('dashboardFreeCash');
+    if (allocEl) allocEl.textContent = `Rp ${totalSavings.toLocaleString('id-ID')}`;
+    if (freeEl) {
+        freeEl.textContent = `Rp ${freeCash.toLocaleString('id-ID')}`;
+        freeEl.style.color = freeCash >= 0 ? 'var(--success)' : 'var(--danger)';
+    }
+}
+
+function parseTxnDate(dateStr) {
+    return typeof window.parseLocalDate === 'function'
+        ? window.parseLocalDate(dateStr)
+        : new Date(dateStr);
 }
 
 function updateMonthlyDashboard() {
     const monthlyTxns = transactions.filter(t => {
-        const d = new Date(t.date);
+        const d = parseTxnDate(t.date);
         return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
     });
 
@@ -359,13 +464,12 @@ function updateMonthlyDashboard() {
     const indicator = document.getElementById('monthlyHealthIndicator');
     if (net >= 0) {
         indicator.className = 'health-indicator health-safe';
-        indicator.innerHTML = '<span>🟢</span> <span>Positive flow!</span>';
+        indicator.innerHTML = '<span>●</span> <span>Positive flow</span>';
     } else {
         indicator.className = 'health-indicator health-critical';
-        indicator.innerHTML = '<span>🔴</span> <span>Spending exceeds income</span>';
+        indicator.innerHTML = '<span>▲</span> <span>Spending exceeds income</span>';
     }
-    
-    // Update badge
+
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const now = new Date();
     if (selectedMonth === now.getMonth() && selectedYear === now.getFullYear()) {
@@ -390,16 +494,16 @@ function updateAlltimeDashboard() {
     const indicator = document.getElementById('alltimeHealthIndicator');
     if (balance >= 0) {
         indicator.className = 'health-indicator health-safe';
-        indicator.innerHTML = '<span>🟢</span> <span>You\'re doing well!</span>';
+        indicator.innerHTML = '<span>●</span> <span>Positive balance</span>';
     } else {
         indicator.className = 'health-indicator health-critical';
-        indicator.innerHTML = '<span>🔴</span> <span>Overall deficit</span>';
+        indicator.innerHTML = '<span>▲</span> <span>Overall deficit</span>';
     }
 }
 
 function updatePeriodLabels() {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+
     if (currentView === 'monthly') {
         const periodText = `(${months[selectedMonth]} ${selectedYear})`;
         document.getElementById('transactionsPeriod').textContent = periodText;
@@ -415,53 +519,284 @@ function getFilteredTransactions() {
     if (currentView === 'alltime') {
         return transactions;
     }
-    
+
     return transactions.filter(t => {
-        const d = new Date(t.date);
+        const d = parseTxnDate(t.date);
         return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
     });
 }
 
+function getSearchAndFilteredTransactions() {
+    let list = getFilteredTransactions();
+
+    const searchQ = (document.getElementById('txnSearchInput')?.value || '').toLowerCase().trim();
+    const typeFilter = document.getElementById('txnTypeFilter')?.value || 'all';
+    const catFilter = document.getElementById('txnCategoryFilter')?.value || 'all';
+
+    if (typeFilter !== 'all') {
+        list = list.filter(t => t.type === typeFilter);
+    }
+    if (catFilter !== 'all') {
+        list = list.filter(t => t.category === catFilter);
+    }
+    if (searchQ) {
+        list = list.filter(t => {
+            const desc = String(t.description || '').toLowerCase();
+            const cat = String(t.category || '').toLowerCase();
+            const amt = String(t.amount || '');
+            return desc.includes(searchQ) || cat.includes(searchQ) || amt.includes(searchQ);
+        });
+    }
+    return list;
+}
+
 function renderTransactions() {
     const container = document.getElementById('transactionsList');
-    const filtered = getFilteredTransactions();
-    
+    const filtered = getSearchAndFilteredTransactions();
+
     if (filtered.length === 0) {
-        container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 40px;"><div style="font-size: 3rem;">📝</div><p>No transactions in this period</p></div>';
+        container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 40px;"><div style="font-size: 1.5rem; opacity: 0.5; margin-bottom: 8px;">[ — ]</div><p>No matching transactions in this period</p></div>';
         return;
     }
+
+    const esc = window.escapeHtml || (s => s);
+    const trashIcon = typeof window.getIconSvg === 'function' ? window.getIconSvg('trash') : '✕';
+    const editIcon = typeof window.getIconSvg === 'function' ? window.getIconSvg('edit') : '✎';
+    const micIcon = typeof window.getIconSvg === 'function' ? window.getIconSvg('mic') : '';
+    const kbIcon = typeof window.getIconSvg === 'function' ? window.getIconSvg('keyboard') : '';
 
     container.innerHTML = filtered.map(t => `
         <div class="transaction-item">
             <div class="transaction-info">
-                <span class="transaction-category">${getCategoryEmoji(t.category)} ${t.category}</span>
-                <div class="transaction-description">${t.description || 'No description'}</div>
-                <div class="transaction-date">${formatDate(t.date)} ${t.method === 'voice' ? '🎤' : '⌨️'}</div>
+                <span class="transaction-category" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px 4px 6px;">
+                    ${getCategoryBadge(t.category)}
+                    <span>${esc(formatCategoryName(t.category))}</span>
+                </span>
+                <div class="transaction-description">${esc(t.description || 'No description')}</div>
+                <div class="transaction-date" style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+                    <span>${formatDate(t.date)}</span>
+                    <span style="opacity:0.75;font-size:0.78rem;display:inline-flex;align-items:center;gap:3px;">
+                        ${t.method === 'voice' ? micIcon + ' Voice' : kbIcon + ' Manual'}
+                    </span>
+                </div>
             </div>
             <div class="transaction-amount ${t.type === 'income' ? 'amount-income' : 'amount-expense'}">
-                ${t.type === 'income' ? '+' : '-'}Rp ${t.amount.toLocaleString('id-ID')}
+                ${t.type === 'income' ? '+' : '−'}Rp ${t.amount.toLocaleString('id-ID')}
             </div>
             <div class="transaction-actions">
-                <button class="btn-icon" onclick="deleteTransaction(${t.id})">🗑️</button>
+                <button class="btn-icon" title="Edit" onclick="openEditModal(${t.id})">${editIcon}</button>
+                <button class="btn-icon" title="Delete" onclick="deleteTransaction(${t.id})">${trashIcon}</button>
             </div>
         </div>
     `).join('');
 }
 
+// ========== EDIT TRANSACTION MODAL ==========
+function populateEditCategoryOptions(type, selectedCat) {
+    const sel = document.getElementById('editCategory');
+    if (!sel) return;
+    const cats = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+    const list = selectedCat && !cats.includes(selectedCat) ? [...cats, selectedCat] : cats;
+    sel.innerHTML = list.map(c => `<option value="${c}">${formatCategoryName(c)}</option>`).join('');
+    if (selectedCat) sel.value = selectedCat;
+}
+
+function openEditModal(id) {
+    const txn = transactions.find(t => t.id === id);
+    if (!txn) return;
+
+    document.getElementById('editTxnId').value = txn.id;
+    document.getElementById('editType').value = txn.type;
+    document.getElementById('editAmount').value = Number(txn.amount || 0).toLocaleString('id-ID');
+    populateEditCategoryOptions(txn.type, txn.category);
+    if (typeof window.setDatePickerValue === 'function') {
+        window.setDatePickerValue('editDate', txn.date, false);
+    } else {
+        document.getElementById('editDate').value = txn.date;
+    }
+    document.getElementById('editDescription').value = txn.description || '';
+
+    document.getElementById('editModal').classList.add('active');
+}
+
+function closeEditModal() {
+    if (typeof window.closeMiniCalendar === 'function') {
+        window.closeMiniCalendar();
+    }
+    const modal = document.getElementById('editModal');
+    if (modal) modal.classList.remove('active');
+}
+
+function saveEditedTransaction(e) {
+    e.preventDefault();
+    const id = Number(document.getElementById('editTxnId').value);
+    const idx = transactions.findIndex(t => t.id === id);
+    if (idx === -1) return;
+
+    const amountVal = window.getUnformattedValue('editAmount');
+    if (!amountVal || amountVal <= 0) {
+        alert('Please enter a valid amount.');
+        return;
+    }
+
+    transactions[idx] = {
+        ...transactions[idx],
+        type: document.getElementById('editType').value,
+        amount: amountVal,
+        category: document.getElementById('editCategory').value,
+        date: document.getElementById('editDate').value,
+        description: document.getElementById('editDescription').value.trim()
+    };
+
+    saveTransactions();
+    closeEditModal();
+    updateDashboards();
+    renderTransactions();
+    updateBudgetStatus();
+    if (document.getElementById('analyticsTab')?.classList.contains('active')) renderAnalytics();
+
+    if (typeof window.sendToSheet === 'function' && typeof window.buildSheetPayload === 'function') {
+        window.sendToSheet(window.buildSheetPayload(transactions[idx]));
+    }
+}
+
+// ========== EXPORT CSV & FULL BACKUP JSON ==========
+function exportTransactionsCsv() {
+    const list = getSearchAndFilteredTransactions();
+    if (!list.length) {
+        alert('No transactions to export.');
+        return;
+    }
+    const headers = ['Id', 'Date', 'Type', 'Category', 'Description', 'Amount', 'Source'];
+    const escapeCsv = (val) => {
+        const s = String(val ?? '');
+        if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+            return `"${s.replace(/"/g, '""')}"`;
+        }
+        return s;
+    };
+    const rows = list.map(t => [
+        t.id,
+        t.date,
+        t.type,
+        t.category,
+        t.description || '',
+        t.amount,
+        t.method || 'manual'
+    ].map(escapeCsv).join(','));
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `finance-transactions-${window.getLocalTodayStr ? window.getLocalTodayStr() : 'export'}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function exportFullBackupJson() {
+    const backup = {
+        version: 4,
+        exportedAt: new Date().toISOString(),
+        transactions: JSON.parse(localStorage.getItem('transactions') || '[]'),
+        budgets: JSON.parse(localStorage.getItem('budgets') || '{}'),
+        active_budget_categories: JSON.parse(localStorage.getItem('active_budget_categories') || '["food","transport","health"]'),
+        budget_inputs_meta: JSON.parse(localStorage.getItem('budget_inputs_meta') || '{}'),
+        budget_line_items: JSON.parse(localStorage.getItem('budget_line_items') || '[]'),
+        savings_general: JSON.parse(localStorage.getItem('savings_general') || '{"total":0,"history":[]}'),
+        savings_goals: JSON.parse(localStorage.getItem('savings_goals') || '[]'),
+        planner_state: JSON.parse(localStorage.getItem('planner_state') || '{}')
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `finance-full-backup-${window.getLocalTodayStr ? window.getLocalTodayStr() : 'backup'}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function handleRestoreJsonFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        try {
+            const data = JSON.parse(evt.target.result);
+            if (!data || typeof data !== 'object') throw new Error('Invalid JSON');
+            if (!confirm('Restore seluruh data (Transaksi, Tabungan, Budget, & Planner) dari file backup ini?')) {
+                e.target.value = '';
+                return;
+            }
+            if (Array.isArray(data.transactions)) {
+                transactions = data.transactions;
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+            }
+            if (data.budgets && typeof data.budgets === 'object') {
+                budgets = data.budgets;
+                localStorage.setItem('budgets', JSON.stringify(budgets));
+            }
+            if (Array.isArray(data.active_budget_categories)) {
+                localStorage.setItem('active_budget_categories', JSON.stringify(data.active_budget_categories));
+            }
+            if (data.budget_inputs_meta && typeof data.budget_inputs_meta === 'object') {
+                localStorage.setItem('budget_inputs_meta', JSON.stringify(data.budget_inputs_meta));
+            }
+            if (Array.isArray(data.budget_line_items)) {
+                localStorage.setItem('budget_line_items', JSON.stringify(data.budget_line_items));
+            }
+            if (data.savings_general) {
+                localStorage.setItem('savings_general', JSON.stringify(data.savings_general));
+            }
+            if (Array.isArray(data.savings_goals)) {
+                localStorage.setItem('savings_goals', JSON.stringify(data.savings_goals));
+            }
+            if (data.planner_state) {
+                localStorage.setItem('planner_state', JSON.stringify(data.planner_state));
+            }
+            updateDashboards();
+            renderTransactions();
+            renderBudgetForm();
+            if (document.getElementById('analyticsTab')?.classList.contains('active')) renderAnalytics();
+            alert('✓ Seluruh data berhasil di-restore!');
+        } catch (err) {
+            alert('File JSON tidak valid.');
+        } finally {
+            e.target.value = '';
+        }
+    };
+    reader.readAsText(file);
+}
+
 function setTodayDate() {
-    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    const todayIso = typeof window.getLocalTodayStr === 'function'
+        ? window.getLocalTodayStr()
+        : new Date().toISOString().split('T')[0];
+    if (typeof window.setDatePickerValue === 'function') {
+        window.setDatePickerValue('date', todayIso, false);
+    } else {
+        const el = document.getElementById('date');
+        if (el) el.value = todayIso;
+    }
 }
 
 function handleFormSubmit(e) {
     e.preventDefault();
-    
+
+    const amountVal = window.getUnformattedValue('amount');
+    if (!amountVal || amountVal <= 0) {
+        alert('Please enter a valid amount.');
+        return;
+    }
+
     const transaction = {
         id: Date.now(),
         type: document.getElementById('type').value,
-        amount: window.getUnformattedValue('amount'),
-        category: document.getElementById('category').value,
+        amount: amountVal,
+        category: document.getElementById('category').value || 'food',
         date: document.getElementById('date').value,
-        description: document.getElementById('description').value,
+        description: document.getElementById('description').value.trim(),
         method: 'manual'
     };
 
@@ -469,13 +804,18 @@ function handleFormSubmit(e) {
     saveTransactions();
     updateDashboards();
     renderTransactions();
+    updateBudgetStatus();
     if (document.getElementById('analyticsTab')?.classList.contains('active')) renderAnalytics();
 
-    sendToSheet(buildSheetPayload(transaction));
-    
+    if (typeof window.sendToSheet === 'function' && typeof window.buildSheetPayload === 'function') {
+        window.sendToSheet(window.buildSheetPayload(transaction));
+    }
+
     this.reset();
+    document.getElementById('category').value = 'food';
+    renderCategoryPicker();
     setTodayDate();
-    alert('✓ Added!');
+    alert('✓ Transaction added.');
 }
 
 function saveTransactions() {
@@ -483,68 +823,18 @@ function saveTransactions() {
 }
 
 function deleteTransaction(id) {
-    if (confirm('Delete?')) {
+    if (confirm('Delete this transaction?')) {
         transactions = transactions.filter(t => t.id !== id);
         saveTransactions();
         updateDashboards();
         renderTransactions();
+        updateBudgetStatus();
         if (document.getElementById('analyticsTab')?.classList.contains('active')) renderAnalytics();
 
-        sendToSheet(buildSheetDeletePayload(id));
+        if (typeof window.sendToSheet === 'function' && typeof window.buildSheetDeletePayload === 'function') {
+            window.sendToSheet(window.buildSheetDeletePayload(id));
+        }
     }
-}
-
-// ========== LANGUAGE TOGGLE ==========
-function toggleLanguage() {
-    currentLang = currentLang === 'en-US' ? 'id-ID' : 'en-US';
-    localStorage.setItem('voiceLang', currentLang);
-    if (recognition) recognition.lang = currentLang;
-    updateLangButton();
-    updateVoiceSuggestions();
-}
-
-function updateLangButton() {
-    const btn = document.getElementById('langToggle');
-    btn.textContent = currentLang === 'en-US' ? '🇬🇧 EN' : '🇮🇩 ID';
-    btn.classList.add('active');
-}
-
-function updateVoiceSuggestions() {
-    const container = document.getElementById('voiceSuggestions');
-    if (currentLang === 'en-US') {
-        container.innerHTML = `
-            <span class="voice-suggestion" data-text="I buy coffee twenty thousand">💡 "I buy coffee 20k"</span>
-            <span class="voice-suggestion" data-text="Lunch at restaurant fifty thousand">💡 "Lunch 50k"</span>
-            <span class="voice-suggestion" data-text="Got three hundred k from freelance">💡 "Got 300k"</span>
-        `;
-    } else {
-        container.innerHTML = `
-            <span class="voice-suggestion" data-text="Saya beli kopi dua puluh ribu">💡 "Beli kopi 20rb"</span>
-            <span class="voice-suggestion" data-text="Makan siang lima puluh ribu">💡 "Makan 50rb"</span>
-            <span class="voice-suggestion" data-text="Terima tiga ratus ribu dari freelance">💡 "Terima 300rb"</span>
-        `;
-    }
-    document.querySelectorAll('.voice-suggestion').forEach(btn => {
-        btn.addEventListener('click', function() {
-            simulateVoice(this.getAttribute('data-text'));
-        });
-    });
-}
-
-// ========== THEME ==========
-function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme');
-    const newTheme = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('colorTheme', newTheme);
-    document.getElementById('themeToggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
-    if (document.getElementById('analyticsTab')?.classList.contains('active')) renderAnalytics();
-}
-
-function loadTheme() {
-    const saved = localStorage.getItem('colorTheme') || 'light';
-    document.documentElement.setAttribute('data-theme', saved);
-    document.getElementById('themeToggle').textContent = saved === 'dark' ? '☀️' : '🌙';
 }
 
 // ========== TABS ==========
@@ -559,15 +849,147 @@ function switchTab(tabName, clickedTab) {
     }
     if (tabName === 'analytics') renderAnalytics();
     if (tabName === 'budget') {
-        if (typeof updateBudgetStatus === 'function') updateBudgetStatus();
-        if (typeof renderBudgetForm === 'function') renderBudgetForm();
+        budgets = JSON.parse(localStorage.getItem('budgets')) || budgets;
+        renderBudgetForm();
     }
 }
 
-// ========== ANALYTICS ==========
+// ========== ANALYTICS & SMART INSIGHTS ==========
 function renderAnalytics() {
+    renderSmartInsights();
     renderCategoryBreakdown();
     renderCharts();
+}
+
+function renderSmartInsights() {
+    const panel = document.getElementById('smartInsightsPanel');
+    if (!panel) return;
+
+    const filtered = getFilteredTransactions();
+    const income = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    const expense = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const net = income - expense;
+    const savingRate = income > 0 ? (net / income) * 100 : 0;
+
+    // 1. Month-over-Month Expense Trend
+    let prevMonth = selectedMonth - 1;
+    let prevYear = selectedYear;
+    if (prevMonth < 0) {
+        prevMonth = 11;
+        prevYear--;
+    }
+    const prevMonthExpense = transactions
+        .filter(t => {
+            const d = parseTxnDate(t.date);
+            return t.type === 'expense' && d.getMonth() === prevMonth && d.getFullYear() === prevYear;
+        })
+        .reduce((s, t) => s + t.amount, 0);
+
+    let momValueHtml = 'Stabil';
+    let momDescHtml = 'Belum ada data pembanding bulan sebelumnya.';
+    let momColor = 'var(--accent-primary)';
+
+    if (currentView === 'monthly') {
+        if (prevMonthExpense > 0) {
+            const diffPct = ((expense - prevMonthExpense) / prevMonthExpense) * 100;
+            if (diffPct > 0) {
+                momValueHtml = `▲ +${diffPct.toFixed(1)}%`;
+                momDescHtml = `Pengeluaran naik dibanding bulan lalu (Rp ${prevMonthExpense.toLocaleString('id-ID')}).`;
+                momColor = 'var(--danger)';
+            } else if (diffPct < 0) {
+                momValueHtml = `▼ ${diffPct.toFixed(1)}%`;
+                momDescHtml = `Lebih hemat dibanding bulan lalu (Rp ${prevMonthExpense.toLocaleString('id-ID')})!`;
+                momColor = 'var(--success)';
+            } else {
+                momValueHtml = '0.0% (Sama)';
+                momDescHtml = `Pengeluaran sama persis dengan bulan lalu.`;
+            }
+        } else if (expense > 0) {
+            momValueHtml = `Rp ${expense.toLocaleString('id-ID')}`;
+            momDescHtml = 'Bulan pertama dengan catatan pengeluaran pada periode ini.';
+        }
+    } else {
+        momValueHtml = `${transactions.filter(t => t.type === 'expense').length} Transaksi`;
+        momDescHtml = `Total akumulasi seluruh pengeluaran sepanjang waktu.`;
+    }
+
+    // 2. Top Category
+    const catTotals = {};
+    filtered.filter(t => t.type === 'expense').forEach(t => {
+        catTotals[t.category] = (catTotals[t.category] || 0) + t.amount;
+    });
+    const sortedCats = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
+    let topCatValueHtml = 'Belum Ada';
+    let topCatDescHtml = 'Belum ada pengeluaran tercatat.';
+    if (sortedCats.length > 0 && expense > 0) {
+        const [topCat, topAmt] = sortedCats[0];
+        const topPct = ((topAmt / expense) * 100).toFixed(1);
+        topCatValueHtml = `${getCategoryBadge(topCat)} ${formatCategoryName(topCat)}`;
+        topCatDescHtml = `Rp ${topAmt.toLocaleString('id-ID')} (${topPct}% dari total pengeluaran).`;
+    }
+
+    // 3. Average Daily Spend
+    const now = new Date();
+    let daysCount = 30;
+    if (currentView === 'monthly') {
+        const daysInSelectedMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+        if (selectedYear === now.getFullYear() && selectedMonth === now.getMonth()) {
+            daysCount = Math.max(1, now.getDate());
+        } else {
+            daysCount = daysInSelectedMonth;
+        }
+    } else {
+        const dates = filtered.map(t => parseTxnDate(t.date).getTime()).filter(n => !isNaN(n));
+        if (dates.length > 1) {
+            const spanDays = Math.ceil((Math.max(...dates) - Math.min(...dates)) / 86400000) + 1;
+            daysCount = Math.max(1, spanDays);
+        }
+    }
+    const avgDaily = Math.round(expense / daysCount);
+
+    // 4. Saving Rate & Budget Health
+    let healthVal = `${savingRate.toFixed(1)}% Saving Rate`;
+    let healthDesc = 'Pertahankan rasio tabungan minimal 20% dari pemasukan.';
+    let healthBorder = 'var(--accent-primary)';
+    if (income === 0 && expense === 0) {
+        healthVal = 'Belum Ada Data';
+        healthDesc = 'Tambahkan transaksi untuk melihat analisis kesehatan finansial.';
+    } else if (net < 0) {
+        healthVal = '[!] Defisit Cashflow';
+        healthDesc = `Pengeluaran melebihi pemasukan sebesar Rp ${Math.abs(net).toLocaleString('id-ID')}.`;
+        healthBorder = 'var(--danger)';
+    } else if (savingRate >= 20) {
+        healthVal = `✓ Sehat (${savingRate.toFixed(1)}%)`;
+        healthDesc = `Surplus Rp ${net.toLocaleString('id-ID')} — melampaui target ideal 20%!`;
+        healthBorder = 'var(--success)';
+    } else {
+        healthVal = `▲ Wajar (${savingRate.toFixed(1)}%)`;
+        healthDesc = `Surplus Rp ${net.toLocaleString('id-ID')}, tingkatkan ke 20% agar lebih aman.`;
+        healthBorder = 'var(--warning)';
+    }
+
+    panel.innerHTML = `
+        <div class="insight-card" style="border-left-color:${momColor};">
+            <div class="insight-card-title">Tren Pengeluaran (MoM)</div>
+            <div class="insight-card-value" style="color:${momColor};">${momValueHtml}</div>
+            <div class="insight-card-desc">${momDescHtml}</div>
+        </div>
+        <div class="insight-card">
+            <div class="insight-card-title">Pos Pengeluaran Terbesar</div>
+            <div class="insight-card-value" style="display:flex;align-items:center;gap:4px;">${topCatValueHtml}</div>
+            <div class="insight-card-desc">${topCatDescHtml}</div>
+        </div>
+        <div class="insight-card">
+            <div class="insight-card-title">Rata-rata Harian</div>
+            <div class="insight-card-value">Rp ${avgDaily.toLocaleString('id-ID')} / hari</div>
+            <div class="insight-card-desc">Dihitung dari ${daysCount} hari aktif pada periode ini.</div>
+        </div>
+        <div class="insight-card" style="border-left-color:${healthBorder};">
+            <div class="insight-card-title">Kesehatan Finansial</div>
+            <div class="insight-card-value" style="color:${healthBorder};">${healthVal}</div>
+            <div class="insight-card-desc">${healthDesc}</div>
+        </div>
+    `;
 }
 
 function getCssVar(name) {
@@ -592,14 +1014,14 @@ function getChartPalette() {
         text,
         grid,
         categoryColors: [
-            accent1,
-            accent2,
-            danger,
-            warning,
-            success,
-            '#38b2ac',
-            '#ed64a6',
-            '#4299e1'
+            '#fb923c',
+            '#38bdf8',
+            '#facc15',
+            '#c084fc',
+            '#f472b6',
+            '#2dd4bf',
+            '#fb7185',
+            '#94a3b8'
         ]
     };
 }
@@ -633,7 +1055,7 @@ function getMonthlyBucketsForSelectedYear() {
 }
 
 function getMonthlyBucketsLast12() {
-    const dates = transactions.map(t => new Date(t.date)).filter(d => !isNaN(d.getTime()));
+    const dates = transactions.map(t => parseTxnDate(t.date)).filter(d => !isNaN(d.getTime()));
     const anchor = dates.length ? new Date(Math.max(...dates.map(d => d.getTime()))) : new Date();
     anchor.setDate(1);
 
@@ -666,7 +1088,7 @@ function renderCharts() {
 
     const categoryLabels = Object.keys(categoryTotals).sort((a, b) => (categoryTotals[b] || 0) - (categoryTotals[a] || 0));
     const categoryValues = categoryLabels.map(k => categoryTotals[k]);
-    const categoryLabelPretty = categoryLabels.map(k => `${getCategoryEmoji(k)} ${k}`);
+    const categoryLabelPretty = categoryLabels.map(k => formatCategoryName(k));
 
     const donutEl = document.getElementById('expenseCategoryChart');
     if (donutEl) {
@@ -849,14 +1271,16 @@ function renderCategoryBreakdown() {
         return;
     }
 
+    const esc = window.escapeHtml || (s => s);
+
     container.innerHTML = Object.entries(catTotals)
         .sort((a, b) => b[1] - a[1])
         .map(([cat, amt]) => {
             const pct = (amt / total * 100).toFixed(1);
             return `
                 <div style="margin-bottom: 20px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <span>${getCategoryEmoji(cat)} ${cat}</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="display:inline-flex;align-items:center;font-weight:600;">${getCategoryBadge(cat)} ${esc(formatCategoryName(cat))}</span>
                         <span><strong>Rp ${amt.toLocaleString('id-ID')}</strong> (${pct}%)</span>
                     </div>
                     <div style="background: var(--bg-primary); height: 12px; border-radius: 6px; overflow: hidden;">
@@ -867,54 +1291,578 @@ function renderCategoryBreakdown() {
         }).join('');
 }
 
-// ========== BUDGET ==========
+// ========== FLEXIBLE LINE-ITEM & PRIORITY BUDGET ENGINE ==========
+const ACTIVE_BUDGET_CATS_KEY = 'active_budget_categories';
+const BUDGET_INPUTS_META_KEY = 'budget_inputs_meta';
+const BUDGET_LINE_ITEMS_KEY = 'budget_line_items';
+
+const DEFAULT_CATEGORY_ITEM_NAMES = {
+    food: 'Makan & Minum Harian',
+    transport: 'Bensin & Transportasi',
+    bills: 'Tagihan Listrik & Internet',
+    study: 'Langganan AI / Edukasi',
+    entertainment: 'Hiburan & Streaming',
+    shopping: 'Belanja Bulanan',
+    health: 'Kesehatan & Suplemen',
+    other: 'Kebutuhan Lainnya'
+};
+
+function calcMonthlyItemAmount(item) {
+    const raw = Number(item.rawAmount) || 0;
+    const cycle = item.cycle || 'monthly';
+    if (cycle === 'daily') return raw * 30;
+    if (cycle === 'weekly') return raw * 4;
+    if (cycle === 'yearly') return Math.round(raw / 12);
+    return raw;
+}
+
+function getCycleMult(cycle) {
+    if (cycle === 'daily') return 30;
+    if (cycle === 'weekly') return 4;
+    if (cycle === 'yearly') return 1 / 12;
+    return 1;
+}
+
+function getBudgetLineItems() {
+    try {
+        const raw = localStorage.getItem(BUDGET_LINE_ITEMS_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+                return parsed.filter(it => it && EXPENSE_CATEGORIES.includes(it.category));
+            }
+        }
+    } catch (e) {}
+
+    // Migrate from existing active_budget_categories / budgets on first load
+    let initialCats = ['food', 'transport', 'health'];
+    try {
+        const rawCats = JSON.parse(localStorage.getItem(ACTIVE_BUDGET_CATS_KEY) || 'null');
+        if (Array.isArray(rawCats) && rawCats.length > 0) {
+            initialCats = rawCats.filter(c => EXPENSE_CATEGORIES.includes(c));
+        }
+    } catch (e) {}
+
+    let meta = {};
+    try {
+        meta = JSON.parse(localStorage.getItem(BUDGET_INPUTS_META_KEY) || '{}') || {};
+    } catch (e) {}
+
+    const migrated = initialCats.map((cat, idx) => {
+        const m = meta[cat] || {};
+        const cycle = ['daily', 'weekly', 'monthly', 'yearly'].includes(m.cycle) ? m.cycle : (cat === 'food' ? 'daily' : 'monthly');
+        const monthlyFallback = Number(budgets[cat]) || (cat === 'food' ? 900000 : 250000);
+        const rawAmount = Number(m.rawAmount) > 0
+            ? Number(m.rawAmount)
+            : (cycle === 'daily' ? Math.round(monthlyFallback / 30) : (cycle === 'weekly' ? Math.round(monthlyFallback / 4) : monthlyFallback));
+
+        return {
+            id: Date.now() + idx,
+            name: DEFAULT_CATEGORY_ITEM_NAMES[cat] || formatCategoryName(cat),
+            category: cat,
+            tier: cat === 'entertainment' || cat === 'shopping' ? 3 : (cat === 'health' || cat === 'study' ? 2 : 1),
+            type: cat === 'bills' || cat === 'study' ? 'subscription' : 'quota',
+            rawAmount,
+            cycle,
+            paidMonths: {}
+        };
+    });
+
+    localStorage.setItem(BUDGET_LINE_ITEMS_KEY, JSON.stringify(migrated));
+    syncBudgetsFromLineItems(migrated);
+    return migrated;
+}
+
+function syncBudgetsFromLineItems(items) {
+    const list = Array.isArray(items) ? items : [];
+    localStorage.setItem(BUDGET_LINE_ITEMS_KEY, JSON.stringify(list));
+
+    const newBudgets = {};
+    EXPENSE_CATEGORIES.forEach(c => { newBudgets[c] = 0; });
+
+    const catSet = new Set();
+    list.forEach(item => {
+        if (!EXPENSE_CATEGORIES.includes(item.category)) return;
+        catSet.add(item.category);
+        newBudgets[item.category] = (newBudgets[item.category] || 0) + calcMonthlyItemAmount(item);
+    });
+
+    const orderedActive = EXPENSE_CATEGORIES.filter(c => catSet.has(c));
+    budgets = { ...budgets, ...newBudgets };
+    localStorage.setItem('budgets', JSON.stringify(budgets));
+    localStorage.setItem(ACTIVE_BUDGET_CATS_KEY, JSON.stringify(orderedActive));
+}
+
+function getActiveBudgetCategories() {
+    const items = getBudgetLineItems();
+    const catSet = new Set(items.map(i => i.category));
+    return EXPENSE_CATEGORIES.filter(c => catSet.has(c));
+}
+
+function addCategoryToBudget(cat) {
+    if (!EXPENSE_CATEGORIES.includes(cat)) return;
+    const items = getBudgetLineItems();
+    const defaultTier = (cat === 'entertainment' || cat === 'shopping') ? 3 : ((cat === 'health' || cat === 'study') ? 2 : 1);
+    const defaultType = (cat === 'bills' || cat === 'study') ? 'subscription' : 'quota';
+    const defaultCycle = cat === 'food' ? 'daily' : 'monthly';
+    const defaultRaw = cat === 'food' ? 35000 : 200000;
+
+    items.push({
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        name: DEFAULT_CATEGORY_ITEM_NAMES[cat] || `Kebutuhan ${formatCategoryName(cat)}`,
+        category: cat,
+        tier: defaultTier,
+        type: defaultType,
+        rawAmount: defaultRaw,
+        cycle: defaultCycle,
+        paidMonths: {}
+    });
+    syncBudgetsFromLineItems(items);
+    renderBudgetForm();
+}
+
+function removeCategoryFromBudget(cat) {
+    const items = getBudgetLineItems().filter(i => i.category !== cat);
+    syncBudgetsFromLineItems(items);
+    renderBudgetForm();
+}
+
+function quickAddBudgetPreset(name, category, tier, type, rawAmount, cycle) {
+    const items = getBudgetLineItems();
+    items.push({
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        name,
+        category,
+        tier: Number(tier) || 1,
+        type: type || 'quota',
+        rawAmount: Number(rawAmount) || 0,
+        cycle: cycle || 'monthly',
+        paidMonths: {}
+    });
+    syncBudgetsFromLineItems(items);
+    renderBudgetForm();
+}
+
+function handleAddCustomBudgetItem() {
+    const editIdEl = document.getElementById('editingBudgetItemId');
+    const nameEl = document.getElementById('newBudgetItemName');
+    const catEl = document.getElementById('newBudgetItemCat');
+    const tierEl = document.getElementById('newBudgetItemTier');
+    const typeEl = document.getElementById('newBudgetItemType');
+    const amtEl = document.getElementById('newBudgetItemAmount');
+    const cycleEl = document.getElementById('newBudgetItemCycle');
+
+    const cat = catEl ? catEl.value : 'food';
+    const name = (nameEl ? nameEl.value.trim() : '') || DEFAULT_CATEGORY_ITEM_NAMES[cat] || formatCategoryName(cat);
+    const tier = parseInt(tierEl?.value || '1', 10) || 1;
+    const type = typeEl?.value || 'quota';
+    const rawAmount = window.getUnformattedValue('newBudgetItemAmount');
+    const cycle = cycleEl?.value || 'monthly';
+
+    if (!rawAmount || rawAmount <= 0) {
+        alert('Masukkan nominal (Rp) terlebih dahulu untuk item budget ini.');
+        return;
+    }
+
+    const items = getBudgetLineItems();
+    const editingId = editIdEl && editIdEl.value ? Number(editIdEl.value) : null;
+
+    if (editingId) {
+        const idx = items.findIndex(i => i.id === editingId);
+        if (idx !== -1) {
+            items[idx] = {
+                ...items[idx],
+                name,
+                category: cat,
+                tier,
+                type,
+                rawAmount,
+                cycle
+            };
+        }
+        cancelEditBudgetItem();
+    } else {
+        items.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            name,
+            category: cat,
+            tier,
+            type,
+            rawAmount,
+            cycle,
+            paidMonths: {}
+        });
+        if (nameEl) nameEl.value = '';
+        if (amtEl) amtEl.value = '';
+    }
+
+    syncBudgetsFromLineItems(items);
+    renderBudgetForm();
+}
+
+function editBudgetItemInForm(itemId) {
+    const items = getBudgetLineItems();
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const editIdEl = document.getElementById('editingBudgetItemId');
+    const nameEl = document.getElementById('newBudgetItemName');
+    const catEl = document.getElementById('newBudgetItemCat');
+    const tierEl = document.getElementById('newBudgetItemTier');
+    const typeEl = document.getElementById('newBudgetItemType');
+    const amtEl = document.getElementById('newBudgetItemAmount');
+    const cycleEl = document.getElementById('newBudgetItemCycle');
+    const submitBtn = document.getElementById('budgetSubmitItemBtn');
+    const cancelBtn = document.getElementById('budgetCancelEditBtn');
+    const titleEl = document.getElementById('budgetBuilderFormTitle');
+
+    if (editIdEl) editIdEl.value = String(item.id);
+    if (nameEl) nameEl.value = item.name;
+    if (catEl) catEl.value = item.category;
+    if (tierEl) tierEl.value = String(item.tier || 1);
+    if (typeEl) typeEl.value = item.type || 'quota';
+    if (amtEl) amtEl.value = Number(item.rawAmount || 0).toLocaleString('id-ID');
+    if (cycleEl) cycleEl.value = item.cycle || 'monthly';
+    if (submitBtn) submitBtn.textContent = '✓ Simpan Perubahan';
+    if (cancelBtn) cancelBtn.style.display = 'inline-flex';
+    if (titleEl) titleEl.innerHTML = `<span style="color:var(--accent-primary);">✎ Mengedit Item: ${window.escapeHtml ? window.escapeHtml(item.name) : item.name}</span>`;
+
+    nameEl?.focus();
+    nameEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function cancelEditBudgetItem() {
+    const editIdEl = document.getElementById('editingBudgetItemId');
+    const nameEl = document.getElementById('newBudgetItemName');
+    const amtEl = document.getElementById('newBudgetItemAmount');
+    const submitBtn = document.getElementById('budgetSubmitItemBtn');
+    const cancelBtn = document.getElementById('budgetCancelEditBtn');
+    const titleEl = document.getElementById('budgetBuilderFormTitle');
+
+    if (editIdEl) editIdEl.value = '';
+    if (nameEl) nameEl.value = '';
+    if (amtEl) amtEl.value = '';
+    if (submitBtn) submitBtn.textContent = '+ Tambah Item';
+    if (cancelBtn) cancelBtn.style.display = 'none';
+    if (titleEl) {
+        titleEl.innerHTML = `
+            <span class="cat-icon-badge cat-icon-badge--bills" style="width:24px;height:24px;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </span>
+            <span>Tambah Item Kebutuhan / Langganan</span>
+        `;
+    }
+}
+
+function cycleBudgetItemTier(itemId) {
+    const items = getBudgetLineItems();
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+    item.tier = item.tier === 1 ? 2 : (item.tier === 2 ? 3 : 1);
+    syncBudgetsFromLineItems(items);
+    renderBudgetForm();
+}
+
+function addBlankItemToCategory(cat) {
+    const catEl = document.getElementById('newBudgetItemCat');
+    const nameEl = document.getElementById('newBudgetItemName');
+    if (catEl) catEl.value = cat;
+    if (nameEl) {
+        nameEl.focus();
+        nameEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+function updateBudgetLineItemField(itemId, field, value) {
+    const items = getBudgetLineItems();
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+
+    if (field === 'rawAmount') {
+        item.rawAmount = parseInt(String(value).replace(/[^0-9]/g, ''), 10) || 0;
+    } else if (field === 'tier') {
+        item.tier = parseInt(value, 10) || 1;
+    } else if (field === 'name') {
+        item.name = String(value);
+    } else if (field === 'cycle') {
+        item.cycle = value;
+    } else if (field === 'type') {
+        item.type = value;
+    }
+
+    syncBudgetsFromLineItems(items);
+    renderBudgetForm();
+}
+
+function toggleSubscriptionPaid(itemId) {
+    const items = getBudgetLineItems();
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const periodKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
+    item.paidMonths = item.paidMonths || {};
+    const nextState = !item.paidMonths[periodKey];
+    item.paidMonths[periodKey] = nextState;
+
+    syncBudgetsFromLineItems(items);
+    renderBudgetForm();
+}
+
+function removeBudgetLineItem(itemId) {
+    const items = getBudgetLineItems().filter(i => i.id !== itemId);
+    syncBudgetsFromLineItems(items);
+    renderBudgetForm();
+}
+
+function formatCycleDesc(item) {
+    const raw = Number(item.rawAmount || 0).toLocaleString('id-ID');
+    if (item.cycle === 'daily') return `Rp ${raw} / hari (×30)`;
+    if (item.cycle === 'weekly') return `Rp ${raw} / minggu (×4)`;
+    if (item.cycle === 'yearly') return `Rp ${raw} / tahun (÷12)`;
+    return item.type === 'subscription' ? 'Tagihan / Langganan Bulanan' : 'Kuota Bulanan (×1)';
+}
+
+function getTierBadgeLabel(tier) {
+    if (tier === 1) return 'T1 · Wajib';
+    if (tier === 2) return 'T2 · Penting';
+    return 'T3 · Keinginan';
+}
+
 function renderBudgetForm() {
     const container = document.getElementById('budgetForm');
-    const cats = ['food', 'transport', 'bills', 'study', 'entertainment', 'shopping', 'health', 'other'];
+    if (!container) return;
 
-    container.innerHTML = cats.map(cat => `
-        <div class="form-group">
-            <label>${getCategoryEmoji(cat)} ${cat.charAt(0).toUpperCase() + cat.slice(1)}</label>
-            <input type="text" inputmode="numeric" value="${Number(budgets[cat] || 0).toLocaleString('id-ID')}" oninput="formatCurrencyInput(event)" onchange="updateBudget('${cat}', this.value)">
-            <div id="budget-${cat}-status" style="margin-top: 8px; font-size: 0.9rem;"></div>
+    const items = getBudgetLineItems();
+    syncBudgetsFromLineItems(items);
+    const activeCats = getActiveBudgetCategories();
+    const esc = window.escapeHtml || (s => s);
+    const periodKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
+
+    if (activeCats.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column:1 / -1;text-align:center;padding:34px 20px;border:1.5px dashed var(--border);border-radius:14px;color:var(--text-secondary);">
+                <div style="font-weight:700;font-size:0.96rem;color:var(--text-primary);margin-bottom:4px;">Belum ada item kebutuhan atau langganan</div>
+                <div style="font-size:0.84rem;">Isi form di atas atau klik tombol <strong>Tambah cepat</strong> (misal: <em>+ Langganan Gemini</em> atau <em>+ Makan Harian</em>) untuk mulai menyusun budgetmu.</div>
+            </div>
+        `;
+        updateBudgetStatus();
+        return;
+    }
+
+    container.innerHTML = activeCats.map(cat => {
+        const catItems = items.filter(i => i.category === cat);
+        const monthlyAmt = Number(budgets[cat] || 0);
+
+        const rowsHtml = catItems.map(item => {
+            const itemMonthly = calcMonthlyItemAmount(item);
+            const isSub = item.type === 'subscription';
+            const isPaid = Boolean(item.paidMonths && item.paidMonths[periodKey]);
+
+            const statusBtn = isSub
+                ? `<button type="button" class="sub-check-btn ${isPaid ? 'paid' : ''}" onclick="toggleSubscriptionPaid(${item.id})" title="Klik untuk tandai status bayar bulan ini">
+                    ${isPaid ? '✓ Lunas' : '○ Belum'}
+                   </button>`
+                : '';
+
+            return `
+                <div class="budget-clean-item ${isSub && isPaid ? 'sub-paid' : ''}">
+                    <div class="budget-clean-item-left">
+                        ${statusBtn}
+                        <div class="budget-clean-item-info">
+                            <div class="budget-clean-item-title-row">
+                                <span class="budget-clean-item-name">${esc(item.name)}</span>
+                                <span class="tier-pill tier-pill--${item.tier}" onclick="cycleBudgetItemTier(${item.id})" title="Klik untuk ubah skala prioritas (T1 → T2 → T3)">
+                                    ${getTierBadgeLabel(item.tier)}
+                                </span>
+                            </div>
+                            <div class="budget-clean-item-meta">${formatCycleDesc(item)}</div>
+                        </div>
+                    </div>
+                    <div class="budget-clean-item-right">
+                        <div class="budget-clean-item-amount">
+                            Rp ${itemMonthly.toLocaleString('id-ID')}<span style="font-size:0.7rem;font-weight:600;color:var(--text-secondary);">/bln</span>
+                        </div>
+                        <button type="button" class="item-action-btn" onclick="editBudgetItemInForm(${item.id})" title="Edit item ini">✎</button>
+                        <button type="button" class="item-action-btn del" onclick="removeBudgetLineItem(${item.id})" title="Hapus item ini">✕</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return `
+        <div class="budget-category-card">
+            <div>
+                <div class="budget-cat-header">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="display:inline-flex;align-items:center;font-weight:700;font-size:0.98rem;color:var(--text-primary);">
+                            ${getCategoryBadge(cat)} <span>${formatCategoryName(cat)}</span>
+                        </span>
+                        <span style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);background:var(--bg-card);padding:2px 8px;border-radius:999px;border:1px solid var(--border);">
+                            ${catItems.length} item
+                        </span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span id="budget-${cat}-monthly-eq" style="font-size:0.95rem;font-weight:800;color:var(--accent-primary);">
+                            Rp ${monthlyAmt.toLocaleString('id-ID')}<span style="font-size:0.74rem;font-weight:600;color:var(--text-secondary);">/bln</span>
+                        </span>
+                        <button type="button" class="item-action-btn del" onclick="removeCategoryFromBudget('${cat}')" title="Hapus seluruh pos ${formatCategoryName(cat)}">✕</button>
+                    </div>
+                </div>
+                <div id="budget-${cat}-status" style="margin-bottom: 4px; font-size: 0.84rem;"></div>
+                <div class="budget-items-list">
+                    ${rowsHtml}
+                </div>
+            </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 
     updateBudgetStatus();
 }
 
+function updateBudgetWithCycle(category) {
+    updateBudgetStatus();
+}
+
 function updateBudget(category, value) {
-    budgets[category] = parseInt(String(value).replace(/[^0-9]/g, '')) || 0;
+    budgets[category] = parseInt(String(value).replace(/[^0-9]/g, ''), 10) || 0;
     localStorage.setItem('budgets', JSON.stringify(budgets));
     updateBudgetStatus();
 }
 
 function updateBudgetStatus() {
     const monthlyTxns = transactions.filter(t => {
-        const d = new Date(t.date);
+        const d = parseTxnDate(t.date);
         return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
     });
 
-    Object.keys(budgets).forEach(cat => {
+    const items = getBudgetLineItems();
+    const activeCats = getActiveBudgetCategories();
+    let totalBudgetLimit = 0;
+    let totalBudgetSpent = 0;
+
+    let tier1Total = 0;
+    let tier2Total = 0;
+    let tier3Total = 0;
+    let subTotalCount = 0;
+    let subPaidCount = 0;
+    const periodKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
+
+    items.forEach(item => {
+        const m = calcMonthlyItemAmount(item);
+        if (item.tier === 1) tier1Total += m;
+        else if (item.tier === 2) tier2Total += m;
+        else tier3Total += m;
+
+        if (item.type === 'subscription') {
+            subTotalCount++;
+            if (item.paidMonths && item.paidMonths[periodKey]) subPaidCount++;
+        }
+    });
+
+    activeCats.forEach(cat => {
         const spent = monthlyTxns.filter(t => t.type === 'expense' && t.category === cat).reduce((s, t) => s + t.amount, 0);
-        const budget = budgets[cat];
-        const pct = budget > 0 ? (spent / budget * 100).toFixed(1) : 0;
+        const budget = Number(budgets[cat]) || 0;
+        totalBudgetLimit += budget;
+        totalBudgetSpent += spent;
+
+        const rawPct = budget > 0 ? (spent / budget * 100) : 0;
+        const pctStr = rawPct.toFixed(1);
+        const barWidth = Math.min(rawPct, 100).toFixed(1);
+        const remaining = budget - spent;
         const el = document.getElementById(`budget-${cat}-status`);
 
         if (el) {
             let color = 'var(--success)';
-            let msg = `${pct}% used`;
-            if (pct >= 100) {
+            let statusIcon = '●';
+            let remText = `Sisa Rp ${Math.max(0, remaining).toLocaleString('id-ID')}`;
+            if (rawPct >= 100 && budget > 0) {
                 color = 'var(--danger)';
-                msg = `⚠️ Over budget!`;
-            } else if (pct >= 80) {
+                statusIcon = '[!]';
+                remText = `Over Rp ${Math.abs(remaining).toLocaleString('id-ID')}`;
+            } else if (rawPct >= 80 && budget > 0) {
                 color = 'var(--warning)';
-                msg = `⚡ ${pct}%`;
+                statusIcon = '▲';
             }
-            el.style.color = color;
-            el.textContent = msg;
+            el.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;color:${color};font-weight:600;font-size:0.84rem;">
+                    <span>${statusIcon} Realisasi Transaksi: ${pctStr}% terpakai (Rp ${spent.toLocaleString('id-ID')})</span>
+                    <span>${remText}</span>
+                </div>
+                <div class="budget-progress-track">
+                    <div class="budget-progress-fill" style="width:${barWidth}%;background:${color};"></div>
+                </div>
+            `;
         }
     });
+
+    const summaryEl = document.getElementById('budgetSummaryCard');
+    if (summaryEl) {
+        const totalDaily = Math.round(totalBudgetLimit / 30);
+        const totalWeekly = Math.round(totalBudgetLimit / 4);
+        const totalPct = totalBudgetLimit > 0 ? (totalBudgetSpent / totalBudgetLimit * 100) : 0;
+        const totalBarW = Math.min(totalPct, 100).toFixed(1);
+        const totalRem = totalBudgetLimit - totalBudgetSpent;
+        const totalColor = totalPct >= 100 ? 'var(--danger)' : (totalPct >= 80 ? 'var(--warning)' : 'var(--success)');
+
+        const monthlyIncome = monthlyTxns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+        let incomeCompareHtml = '';
+        if (monthlyIncome > 0) {
+            const unassigned = monthlyIncome - totalBudgetLimit;
+            incomeCompareHtml = unassigned >= 0
+                ? `<div style="margin-top:10px;padding:8px 12px;border-radius:8px;background:rgba(72,187,120,0.1);border:1px solid rgba(72,187,120,0.3);font-size:0.82rem;color:var(--success);font-weight:600;">
+                    ✓ Zero-Based Check: Pendapatan bulan ini (Rp ${monthlyIncome.toLocaleString('id-ID')}) mencukupi seluruh rencana budgetmu dengan sisa <strong>+Rp ${unassigned.toLocaleString('id-ID')}</strong> untuk Tabungan/Investasi.
+                   </div>`
+                : `<div style="margin-top:10px;padding:8px 12px;border-radius:8px;background:rgba(245,101,101,0.1);border:1px solid rgba(245,101,101,0.3);font-size:0.82rem;color:var(--danger);font-weight:600;">
+                    [!] Reality Check: Total rencana budgetmu melebihi pendapatan bulan ini sebesar <strong>Rp ${Math.abs(unassigned).toLocaleString('id-ID')}</strong>. Kamu bisa memangkas item <strong>Tier 3 (Keinginan: Rp ${tier3Total.toLocaleString('id-ID')})</strong> terlebih dahulu.
+                   </div>`;
+        }
+
+        summaryEl.innerHTML = `
+            <div class="budget-kpi-grid">
+                <div class="budget-kpi-card">
+                    <div>
+                        <div class="budget-kpi-label">Total Kebutuhan Ideal (${items.length} Item · ${activeCats.length} Pos)</div>
+                        <div class="budget-kpi-val" style="color:var(--accent-primary);">
+                            Rp ${totalBudgetLimit.toLocaleString('id-ID')} <span style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">/bln</span>
+                        </div>
+                    </div>
+                    <div class="budget-kpi-sub">
+                        ≈ Rp ${totalDaily.toLocaleString('id-ID')}/hari · Rp ${totalWeekly.toLocaleString('id-ID')}/mgg
+                    </div>
+                </div>
+                <div class="budget-kpi-card">
+                    <div>
+                        <div class="budget-kpi-label">Minimal Hidup & Kerja (Prioritas 1)</div>
+                        <div class="budget-kpi-val" style="color:#ef4444;">
+                            Rp ${tier1Total.toLocaleString('id-ID')} <span style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">/bln</span>
+                        </div>
+                    </div>
+                    <div class="budget-kpi-sub">
+                        T2 Penting: Rp ${tier2Total.toLocaleString('id-ID')} · T3 Keinginan: Rp ${tier3Total.toLocaleString('id-ID')}
+                    </div>
+                </div>
+                <div class="budget-kpi-card">
+                    <div>
+                        <div class="budget-kpi-label">Realisasi & Sisa Kuota Bulan Ini</div>
+                        <div class="budget-kpi-val" style="color:${totalColor};">
+                            Rp ${totalBudgetSpent.toLocaleString('id-ID')} <span style="font-size:0.82rem;">(${totalPct.toFixed(1)}%)</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="budget-progress-track" style="height:8px;margin-top:6px;">
+                            <div class="budget-progress-fill" style="width:${totalBarW}%;background:${totalColor};"></div>
+                        </div>
+                        <div class="budget-kpi-sub" style="color:${totalRem >= 0 ? 'var(--success)' : 'var(--danger)'};font-weight:600;margin-top:4px;">
+                            ${totalRem >= 0 ? 'Sisa Rp ' + totalRem.toLocaleString('id-ID') : 'Over Rp ' + Math.abs(totalRem).toLocaleString('id-ID')}
+                            ${subTotalCount > 0 ? ` · Tagihan Lunas: ${subPaidCount}/${subTotalCount}` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            ${incomeCompareHtml ? `<div style="margin-bottom:20px;">${incomeCompareHtml}</div>` : ''}
+        `;
+    }
 }
 
 // ========== HELPERS ==========
@@ -938,15 +1886,31 @@ function showDailyQuote() {
     document.getElementById('dailyQuote').textContent = `"${quotes[Math.floor(Math.random() * quotes.length)]}"`;
 }
 
-function getCategoryEmoji(cat) {
-    const emojis = {
-        food: '🍔', transport: '🚗', bills: '💡', study: '📚',
-        entertainment: '🎮', shopping: '🛍️', health: '🏥', other: '📦'
-    };
-    return emojis[cat] || '📦';
-}
-
 function formatDate(dateStr) {
-    const d = new Date(dateStr);
+    const d = parseTxnDate(dateStr);
+    if (isNaN(d.getTime())) return dateStr || '-';
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
+
+window.updateDashboards = updateDashboards;
+window.renderTransactions = renderTransactions;
+window.updateBudgetStatus = updateBudgetStatus;
+window.renderAnalytics = renderAnalytics;
+window.renderBudgetForm = renderBudgetForm;
+window.switchView = switchView;
+window.deleteTransaction = deleteTransaction;
+window.openEditModal = openEditModal;
+window.closeEditModal = closeEditModal;
+window.updateBudget = updateBudget;
+window.updateBudgetWithCycle = updateBudgetWithCycle;
+window.addCategoryToBudget = addCategoryToBudget;
+window.removeCategoryFromBudget = removeCategoryFromBudget;
+window.quickAddBudgetPreset = quickAddBudgetPreset;
+window.handleAddCustomBudgetItem = handleAddCustomBudgetItem;
+window.editBudgetItemInForm = editBudgetItemInForm;
+window.cancelEditBudgetItem = cancelEditBudgetItem;
+window.cycleBudgetItemTier = cycleBudgetItemTier;
+window.addBlankItemToCategory = addBlankItemToCategory;
+window.updateBudgetLineItemField = updateBudgetLineItemField;
+window.toggleSubscriptionPaid = toggleSubscriptionPaid;
+window.removeBudgetLineItem = removeBudgetLineItem;

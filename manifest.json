@@ -1,0 +1,50 @@
+{
+  "name": "Finance Tracker",
+  "short_name": "Finance",
+  "description": "Pelacak keuangan, tabungan & smart budget planner pribadi",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#f97316",
+  "lang": "id",
+  "categories": ["finance", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Buka ringkasan & catat transaksi",
+      "url": "./index.html",
+      "icons": [{ "src": "images/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Tabungan",
+      "short_name": "Tabungan",
+      "description": "Kelola tabungan umum & target tujuan",
+      "url": "./saving.html",
+      "icons": [{ "src": "images/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Budget Planner",
+      "short_name": "Planner",
+      "description": "Simulasi & perencanaan budget prioritas",
+      "url": "./calculator.html",
+      "icons": [{ "src": "images/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

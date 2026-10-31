@@ -288,9 +288,15 @@ class BilingualParser {
 
         this.incomeKeywords = [
             'income', 'got', 'receive', 'received', 'earn', 'earned',
-            'salary', 'wage', 'paid', 'payment', 'allowance', 'freelance',
-            'terima', 'dapat', 'dapet', 'masuk', 'gaji', 'bayaran',
-            'honor', 'uang', 'kiriman', 'transfer'
+            'salary', 'wage', 'got paid', 'allowance', 'freelance', 'bonus',
+            'terima', 'dapat', 'dapet', 'uang masuk', 'gaji', 'gajian', 'bayaran',
+            'honor', 'kiriman', 'terima transfer', 'dapat transfer', 'komisi', 'profit', 'cuan'
+        ];
+
+        this.expenseVerbs = [
+            'beli', 'bayar', 'jajan', 'sewa', 'cicil', 'langganan', 'top up', 'topup',
+            'ongkos', 'biaya', 'uang sekolah', 'uang kuliah', 'uang makan', 'uang jajan', 'tiket masuk',
+            'buy', 'bought', 'spend', 'spent', 'pay', 'paid for'
         ];
 
         this.timeRefs = {
@@ -353,6 +359,31 @@ class BilingualParser {
         return null;
     }
 
+    parseMultiple(text, existingGoals) {
+        const raw = String(text || '').trim();
+        if (!raw) return [this.parse('', existingGoals)];
+
+        // Primary compound connectors
+        const connectorRegex = /\b(?:terus|lalu|kemudian|habis itu|setelah itu|lanjut|then|and then)\b|(?:,\s*|\s+\b(?:sama|dan|plus|and)\b\s+)(?=(?:beli|bayar|jajan|makan|minum|naik|top\s*up|nabung|tabung|simpan|ambil|tarik|terima|dapat|dapet|buy|bought|pay|paid|got|spend|spent|[a-zA-Z]+\s+\d))/i;
+
+        const parts = raw.split(connectorRegex).map(s => s.trim()).filter(Boolean);
+        if (parts.length > 1) {
+            const parsedList = parts.map(p => this.parse(p, existingGoals)).filter(item => item.amount > 0);
+            if (parsedList.length > 1) {
+                // Inherit yesterday date if mentioned anywhere in the sentence
+                const globalDate = this.extractDate(raw.toLowerCase());
+                parsedList.forEach(item => {
+                    if (item.intent === 'transaction') {
+                        item.date = globalDate;
+                    }
+                });
+                return parsedList;
+            }
+        }
+
+        return [this.parse(raw, existingGoals)];
+    }
+
     parse(text, existingGoals) {
         const lower = text.toLowerCase().trim();
         const savingInfo = this.detectSavingIntent(lower, existingGoals || []);
@@ -367,12 +398,13 @@ class BilingualParser {
             };
         }
 
+        const detectedType = this.detectType(lower);
         return {
             original: text,
             intent: 'transaction',
             amount: this.extractAmount(lower),
-            type: this.detectType(lower),
-            category: this.detectCategory(lower),
+            type: detectedType,
+            category: detectedType === 'income' ? this.detectIncomeCategory(lower) : this.detectCategory(lower),
             date: this.extractDate(lower),
             description: this.extractDescription(text)
         };
@@ -673,10 +705,29 @@ class BilingualParser {
     }
 
     detectType(text) {
+        for (const verb of this.expenseVerbs) {
+            if (this.keywordMatches(text, verb)) return 'expense';
+        }
         for (const keyword of this.incomeKeywords) {
-            if (text.includes(keyword)) return 'income';
+            if (this.keywordMatches(text, keyword)) return 'income';
         }
         return 'expense';
+    }
+
+    detectIncomeCategory(text) {
+        const incomeMap = {
+            salary: ['gaji', 'gajian', 'salary', 'wage', 'upah', 'paycheck', 'allowance', 'uang saku', 'uang bulanan'],
+            freelance: ['freelance', 'proyek', 'project', 'klien', 'client', 'honor', 'bayaran', 'komisi', 'jasa', 'side hustle'],
+            bonus: ['bonus', 'thr', 'insentif', 'reward', 'hadiah lomba', 'cashback'],
+            investment: ['dividen', 'dividend', 'saham', 'crypto', 'bunga', 'investasi', 'investment', 'profit', 'cuan', 'reksadana', 'trading'],
+            gift: ['hadiah', 'gift', 'angpao', 'kiriman', 'transfer', 'dikasih', 'sedekah']
+        };
+        for (const [cat, keywords] of Object.entries(incomeMap)) {
+            for (const kw of keywords) {
+                if (this.keywordMatches(text, kw)) return cat;
+            }
+        }
+        return 'salary';
     }
 
     detectCategory(text) {
@@ -727,6 +778,13 @@ class BilingualParser {
         return false;
     }
 
+    formatLocalDate(d) {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
     extractDate(text) {
         const today = new Date();
         for (const [ref, keywords] of Object.entries(this.timeRefs)) {
@@ -735,24 +793,25 @@ class BilingualParser {
                     if (ref === 'yesterday') {
                         const yesterday = new Date(today);
                         yesterday.setDate(today.getDate() - 1);
-                        return yesterday.toISOString().split('T')[0];
+                        return this.formatLocalDate(yesterday);
                     }
-                    return today.toISOString().split('T')[0];
+                    return this.formatLocalDate(today);
                 }
             }
         }
-        return today.toISOString().split('T')[0];
+        return this.formatLocalDate(today);
     }
 
     extractDescription(text) {
         let clean = text;
-        clean = clean.replace(/\d+(?:[.,]\d+)?\s*(k|rb|ribu|thousand|juta|jt|million)/gi, '');
+        clean = clean.replace(/\d+(?:[.,]\d+)?\s*(k|rb|ribu|rebu|thousand|juta|jt|million)/gi, '');
         clean = clean.replace(/\b\d{4,}\b/g, '');
-        clean = clean.replace(/\b(today|yesterday|hari ini|kemarin|tadi|barusan)\b/gi, '');
-        const spokenNumbersPattern = /\b(nol|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|belas|puluh|ratus|seribu|sejuta)\b/gi;
+        clean = clean.replace(/\b(today|yesterday|hari ini|kemarin|kemaren|tadi|barusan)\b/gi, '');
+        const spokenNumbersPattern = /\b(nol|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|belas|puluh|ratus|ribu|rb|rebu|juta|jt|seribu|sejuta)\b/gi;
         clean = clean.replace(spokenNumbersPattern, '');
         const englishNumbersPattern = /\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million)\b/gi;
         clean = clean.replace(englishNumbersPattern, '');
+        clean = clean.replace(/\b\d+\b/g, '');
         clean = clean.replace(/\s+/g, ' ').trim();
         if (clean.length < 3) return text;
         return clean;

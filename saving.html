@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#f97316">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Finance Tracker">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="images/icon-192.png">
+    <link rel="apple-touch-icon" href="images/icon-192.png">
     <title>Finance Tracker - Tabungan</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +20,7 @@
         /* ── Saving-page extras ── */
         .saving-hero {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
             gap: 16px;
             margin-bottom: 32px;
         }
@@ -24,35 +31,362 @@
         .general-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.25); }
         .goals-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 16px;
             margin-bottom: 32px;
         }
+        /* ── Redesigned Goal Cards (Modern Fintech Style) ── */
         .goal-card {
+            background: var(--bg-card);
+            border: 1.5px solid var(--border);
+            border-radius: 18px;
+            padding: 18px 20px;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .goal-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 14px 32px var(--shadow);
+            border-color: rgba(234, 88, 12, 0.45);
+        }
+        .goal-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .goal-card-lead {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+        }
+        .goal-card-icon-wrap {
+            width: 38px;
+            height: 38px;
+            border-radius: 11px;
+            background: rgba(234, 88, 12, 0.12);
+            color: var(--accent-primary);
+            border: 1px solid rgba(234, 88, 12, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .goal-card-icon-wrap svg {
+            width: 18px;
+            height: 18px;
+        }
+        .goal-card-title-group {
+            min-width: 0;
+            flex: 1;
+        }
+        .goal-card-title {
+            font-size: 1.02rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.3;
+        }
+        .goal-card-status-pill {
+            display: inline-block;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 1px;
+        }
+        .goal-card-status-pill.complete {
+            color: var(--success);
+        }
+        .goal-delete-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.15s;
+            padding: 0;
+        }
+        .goal-delete-btn:hover {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: var(--danger);
+            color: var(--danger);
+            transform: scale(1.06);
+        }
+        .goal-delete-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Balance & Target Metrics */
+        .goal-balance-row {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 10px 14px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+        .goal-balance-col {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .goal-balance-target-col {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .goal-balance-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+        .goal-balance-current {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+        .goal-balance-current.complete {
+            color: var(--success);
+        }
+        .goal-balance-target {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            line-height: 1.2;
+        }
+
+        /* Progress Bar */
+        .goal-progress-section {
+            margin-bottom: 12px;
+        }
+        .goal-progress-track {
+            background: rgba(148, 163, 184, 0.22);
+            height: 8px;
+            border-radius: 999px;
+            overflow: hidden;
             position: relative;
         }
-        .goal-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.25); }
-        .goal-delete-btn {
-            position: absolute; top: 12px; right: 12px;
-            background: rgba(245,101,101,0.2); color: var(--danger);
-            border: none; border-radius: 50%; width: 28px; height: 28px;
-            font-size: 0.8rem; font-weight: bold; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: background 0.2s;
+        .goal-progress-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            transition: width 0.5s ease;
         }
-        .goal-delete-btn:hover { background: rgba(245,101,101,0.5); }
-        .progress-bar-wrap {
+        .goal-progress-fill.complete {
+            background: var(--success);
+        }
+        .goal-progress-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 6px;
+            font-size: 0.78rem;
+        }
+        .goal-deadline-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .goal-deadline-badge svg {
+            width: 13px;
+            height: 13px;
+            opacity: 0.85;
+        }
+        .goal-pct-pill {
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.74rem;
+            font-weight: 800;
+            background: rgba(234, 88, 12, 0.1);
+            color: var(--accent-primary);
+            border: 1px solid rgba(234, 88, 12, 0.24);
+        }
+        .goal-pct-pill.complete {
+            background: rgba(34, 197, 94, 0.12);
+            color: var(--success);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        /* Smart Plan Panel */
+        .goal-plan-panel {
             background: var(--bg-primary);
-            height: 10px; border-radius: 5px; overflow: hidden; margin-top: 10px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+        }
+        .goal-plan-status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed var(--border);
+        }
+        .goal-plan-pill-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .goal-plan-pill-info.text-right {
+            text-align: right;
+        }
+        .goal-plan-label {
+            font-size: 0.67rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-secondary);
+            margin-bottom: 1px;
+        }
+        .goal-plan-val {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .goal-plan-rhythm-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .goal-plan-rhythm-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 7px 9px;
+            display: flex;
+            flex-direction: column;
+        }
+        .rhythm-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+        .rhythm-val {
+            font-size: 0.86rem;
+            font-weight: 800;
+            color: var(--accent-primary);
+            line-height: 1.2;
+        }
+
+        /* Complete & Alert Panels */
+        .goal-plan-panel.complete {
+            border-color: rgba(34, 197, 94, 0.35);
+            background: rgba(34, 197, 94, 0.08);
+            text-align: center;
+            padding: 11px 12px;
+        }
+        .goal-plan-complete-text {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--success);
+        }
+        .goal-plan-panel.overdue {
+            border-color: rgba(239, 68, 68, 0.35);
+            background: rgba(239, 68, 68, 0.08);
+            padding: 9px 12px;
+        }
+        .goal-plan-panel.today {
+            border-color: rgba(245, 158, 11, 0.35);
+            background: rgba(245, 158, 11, 0.08);
+            padding: 9px 12px;
+        }
+        .goal-plan-overdue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--danger);
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .goal-plan-panel.today .goal-plan-overdue-header {
+            color: var(--warning);
+        }
+        .goal-plan-lack {
+            color: var(--text-primary);
+            font-weight: 800;
+        }
+
+        /* Card Interactive Footer */
+        .goal-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 9px;
+            border-top: 1px dashed var(--border);
+            font-size: 0.77rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: color 0.15s;
+        }
+        .goal-card:hover .goal-card-footer {
+            color: var(--accent-primary);
+        }
+        .goal-footer-arrow {
+            font-size: 0.88rem;
+            transition: transform 0.2s ease;
+        }
+        .goal-card:hover .goal-footer-arrow {
+            transform: translateX(4px);
+        }
+
+        /* Legacy fallback compat */
+        .progress-bar-wrap {
+            background: rgba(148, 163, 184, 0.22);
+            height: 8px; border-radius: 999px; overflow: hidden; margin-top: 8px;
         }
         .progress-bar-fill {
-            height: 100%; border-radius: 5px;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            height: 100%; border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
             transition: width 0.5s ease;
         }
         .progress-bar-fill.complete { background: var(--success); }
+        .goal-plan-box {
+            margin-top: 10px;
+        }
+
+        /* ── Preview Banner for Goal Deadline ── */
+        .cal-preview-banner {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            font-size: 0.84rem;
+            line-height: 1.5;
+        }
 
         /* ── History Modal ── */
         .saving-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
@@ -66,7 +400,7 @@
         @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .modal-close-btn {
             float: right; background: none; border: none; font-size: 1.5rem;
-            cursor: pointer; color: var(--text-secondary); line-height: 1;
+            cursor: pointer; color: var(--text-secondary); line-height: 1; padding: 4px;
         }
         .history-list { margin-top: 16px; }
         .history-item {
@@ -94,26 +428,36 @@
             color: var(--text-primary); display: flex; align-items: center; gap: 8px;
         }
         .max-badge {
-            font-size: 0.75rem; background: var(--accent-primary);
-            color: white; border-radius: 20px; padding: 2px 10px; font-weight: 600;
+            font-size: 0.74rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 999px;
+            background: rgba(234, 88, 12, 0.12);
+            color: var(--accent-primary);
+            border: 1px solid rgba(234, 88, 12, 0.28);
+            letter-spacing: 0.3px;
         }
 
         /* ── Voice ── */
         .voice-section { margin-bottom: 32px; }
     </style>
 </head>
-<body>
+<body class="naruto">
     <header>
         <div class="header-content">
-            <h1>💰 Finance Tracker</h1>
+            <h1>FINANCE TRACKER</h1>
             <nav class="main-nav">
                 <a href="index.html" class="nav-link">Dashboard</a>
                 <a href="saving.html" class="nav-link active">Tabungan</a>
                 <a href="calculator.html" class="nav-link">Planner</a>
             </nav>
             <div class="header-actions">
-                <button class="lang-toggle" id="langToggle">🇮🇩 ID</button>
-                <button class="theme-toggle" id="themeToggle">🌙</button>
+                <button type="button" class="install-app-btn" onclick="triggerPwaInstall()" style="display:none;" title="Install ke Layar HP/Desktop">
+                    <svg class="ui-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>Install</span>
+                </button>
+                <button class="lang-toggle" id="langToggle">ID</button>
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"></button>
             </div>
         </div>
     </header>
@@ -125,18 +469,31 @@
         </div>
 
         <!-- ======== TABUNGAN UMUM ======== -->
-        <div class="section-heading">💳 Tabungan Umum</div>
+        <div class="section-heading">
+            <span class="cat-icon-badge cat-icon-badge--bills">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+            </span>
+            <span>Tabungan Umum</span>
+        </div>
         <div class="saving-hero">
             <div class="card balance-card general-card" id="generalCard" onclick="openGeneralModal()">
-                <div class="card-title">Total Saldo Tabungan Umum</div>
+                <div class="card-title">Saldo Tabungan Umum</div>
                 <div class="card-value" id="generalBalance">Rp 0</div>
-                <div class="card-subtitle" style="margin-top:8px; opacity:0.7;">Klik untuk lihat riwayat →</div>
+                <div class="card-subtitle" style="margin-top:8px; opacity:0.7;">Klik untuk tambah / tarik & lihat riwayat →</div>
+            </div>
+            <div class="card rate-card">
+                <div class="card-title">Total Seluruh Tabungan</div>
+                <div class="card-value" id="totalAllSavings">Rp 0</div>
+                <div class="card-subtitle" id="totalSavingsBreakdown" style="margin-top:8px;">Umum + 0 Tujuan</div>
             </div>
         </div>
 
         <!-- ======== TABUNGAN TUJUAN ======== -->
         <div class="section-heading">
-            🎯 Tabungan Tujuan
+            <span class="cat-icon-badge cat-icon-badge--shopping">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            </span>
+            <span>Tabungan Tujuan</span>
             <span class="max-badge" id="goalCountBadge">0/5</span>
         </div>
         <div class="goals-grid" id="goalsContainer">
@@ -145,43 +502,65 @@
 
         <!-- ======== TAMBAH TUJUAN ======== -->
         <div class="add-goal-section">
-            <div class="transaction-form">
-                <h2 style="margin-bottom:20px;">➕ Tambah Tujuan Baru</h2>
+            <div class="transaction-form" style="overflow:visible;">
+                <h2 style="margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+                    <span class="cat-icon-badge cat-icon-badge--food">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    </span>
+                    <span>Tambah Tujuan Baru</span>
+                </h2>
                 <form id="goalForm">
                     <div class="form-row">
                         <div class="form-group">
                             <label>Nama Tujuan</label>
                             <input type="text" id="goalName" required placeholder="cth: Jepang, Motor, Laptop">
                         </div>
-                    </div>
-                    <div class="form-row">
                         <div class="form-group">
-                            <label>Target (Rp)</label>
-                            <input type="text" inputmode="numeric" id="goalTarget" required placeholder="5000000" oninput="formatCurrencyInput(event)">
-                        </div>
-                        <div class="form-group">
-                            <label>Deadline</label>
-                            <input type="date" id="goalDeadline" required>
+                            <label>Target Nominal (Rp)</label>
+                            <input type="text" inputmode="numeric" id="goalTarget" required placeholder="5.000.000" oninput="formatCurrencyInput(event); updateCalendarPlanPreview();">
                         </div>
                     </div>
-                    <button type="submit" style="width:100%;">Buat Tujuan</button>
+
+                    <div class="form-group">
+                        <label>Tanggal Target Tercapai</label>
+                        <input type="hidden" id="goalDeadline" required>
+
+                        <div class="datepicker-wrapper" id="datePickerWrapper">
+                            <!-- Clickable Field that opens Global Top-Layer Mini Calendar Popup -->
+                            <div class="datepicker-trigger" id="goalDeadlineTrigger" onclick="toggleMiniCalendar(event, 'goalDeadline', { minToday: true })">
+                                <span id="goalDeadlineLabel">Klik untuk pilih tanggal...</span>
+                                <span class="datepicker-trigger-icon">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="cal-preview-banner" id="calPlanPreview">
+                            Pilih tanggal target & isi nominal untuk melihat estimasi tabungan harian/bulanan.
+                        </div>
+                    </div>
+
+                    <button type="submit" style="width:100%;">Buat Tujuan Tabungan</button>
                 </form>
             </div>
         </div>
 
         <!-- ======== VOICE INPUT ======== -->
         <div class="voice-section">
-            <div class="voice-container">
-                <div class="voice-header">
-                    <div>
-                        <h2 class="voice-title">🎤 Voice Input</h2>
-                        <p class="voice-subtitle" id="voiceStatus">Tap untuk mulai</p>
-                    </div>
-                    <button class="voice-button" id="voiceButton">🎤</button>
-                </div>
-                <div id="voiceResult"></div>
-                <div class="voice-suggestions" id="voiceSuggestions"></div>
+            <div class="voice-language-badge">
+                <svg class="ui-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span id="voiceLangDisplay">English + Indonesian</span>
             </div>
+            <h2 style="margin-bottom: 10px; display:flex; align-items:center; justify-content:center; gap:8px;">Voice Input</h2>
+            <p style="margin-bottom: 20px; opacity: 0.9; font-size: 0.95rem;">
+                Ucapkan transaksi atau tabungan secara natural
+            </p>
+            <button class="voice-button" id="voiceButton">
+                <img src="" alt="Theme Avatar" class="voice-avatar" id="voiceAvatar" />
+            </button>
+            <div class="voice-status" id="voiceStatus">Tap untuk mulai</div>
+            <div class="voice-result" id="voiceResult"></div>
+            <div class="voice-suggestions" id="voiceSuggestions"></div>
         </div>
     </div>
 
@@ -189,17 +568,17 @@
     <div class="saving-modal" id="generalModal">
         <div class="saving-modal-content">
             <button class="modal-close-btn" onclick="closeModal('generalModal')">✕</button>
-            <h2 style="margin-bottom:4px;">💳 Tabungan Umum</h2>
+            <h2 style="margin-bottom:4px;">Tabungan Umum</h2>
             <div style="font-size:2rem;font-weight:800;color:var(--accent-primary);margin:12px 0;" id="modalGeneralBalance">Rp 0</div>
 
             <!-- Manual input in modal -->
             <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
                 <input type="text" inputmode="numeric" id="manualGeneralAmount" placeholder="Nominal (Rp)" style="flex:1;min-width:120px;" oninput="formatCurrencyInput(event)">
                 <button onclick="manualSaveGeneral('add')" style="background:var(--success);color:white;border:none;border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:700;">+ Tambah</button>
-                <button onclick="manualSaveGeneral('withdraw')" style="background:var(--danger);color:white;border:none;border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:700;">- Tarik</button>
+                <button onclick="manualSaveGeneral('withdraw')" style="background:var(--danger);color:white;border:none;border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:700;">− Tarik</button>
             </div>
 
-            <div class="section-heading" style="font-size:0.95rem;">📋 Riwayat</div>
+            <div class="section-heading" style="font-size:0.95rem;">Riwayat</div>
             <div class="history-list" id="generalHistoryList"></div>
         </div>
     </div>
@@ -220,16 +599,17 @@
                     <div class="progress-bar-fill" id="modalGoalBar" style="width:0%"></div>
                 </div>
                 <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:6px;">Deadline: <strong id="modalGoalDeadline"></strong></div>
+                <div class="goal-plan-box" id="modalGoalPlanBox" style="margin-top:10px;"></div>
             </div>
 
             <!-- Manual input in modal -->
             <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
                 <input type="text" inputmode="numeric" id="manualGoalAmount" placeholder="Nominal (Rp)" style="flex:1;min-width:120px;" oninput="formatCurrencyInput(event)">
                 <button onclick="manualSaveGoal('add')" style="background:var(--success);color:white;border:none;border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:700;">+ Tambah</button>
-                <button onclick="manualSaveGoal('withdraw')" style="background:var(--danger);color:white;border:none;border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:700;">- Tarik</button>
+                <button onclick="manualSaveGoal('withdraw')" style="background:var(--danger);color:white;border:none;border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:700;">− Tarik</button>
             </div>
 
-            <div class="section-heading" style="font-size:0.95rem;">📋 Riwayat</div>
+            <div class="section-heading" style="font-size:0.95rem;">Riwayat</div>
             <div class="history-list" id="goalHistoryList"></div>
         </div>
     </div>
@@ -238,7 +618,7 @@
     <div id="confirmModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-icon">✅</div>
+                <div class="modal-icon-badge">✓</div>
                 <div>
                     <h2>Konfirmasi</h2>
                     <p style="color:var(--text-secondary);font-size:0.9rem;margin-top:5px;">Periksa sebelum menyimpan</p>
@@ -247,7 +627,7 @@
             <div class="confirm-details"></div>
             <div class="modal-actions">
                 <button class="btn-success" id="confirmSaveBtn">✓ Simpan</button>
-                <button class="btn-secondary" id="confirmCancelBtn">✗ Batal</button>
+                <button class="btn-secondary" id="confirmCancelBtn">✕ Batal</button>
             </div>
         </div>
     </div>
