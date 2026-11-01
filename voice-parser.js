@@ -1,9 +1,10 @@
-// ========== VOICE PARSER ==========
+// ========== VOICE PARSER (BILINGUAL ID / EN) ==========
 class BilingualParser {
     constructor() {
         this.multipliers = {
-            'k': 1000, 'rb': 1000, 'ribu': 1000, 'rebu': 1000,
-            'thousand': 1000, 'juta': 1000000, 'jt': 1000000, 'million': 1000000
+            'k': 1000, 'rb': 1000, 'ribu': 1000, 'rebu': 1000, 'thousand': 1000, 'bucks': 1000,
+            'juta': 1000000, 'jt': 1000000, 'million': 1000000, 'mil': 1000000,
+            'miliar': 1000000000, 'milyar': 1000000000, 'billion': 1000000000
         };
 
         this.spokenNumbers = {
@@ -17,7 +18,12 @@ class BilingualParser {
             'delapan puluh': 80, 'sembilan puluh': 90,
             'seratus': 100, 'dua ratus': 200, 'tiga ratus': 300,
             'empat ratus': 400, 'lima ratus': 500,
-            'seribu': 1000, 'sejuta': 1000000
+            'seribu': 1000, 'sejuta': 1000000, 'semiliar': 1000000000,
+            // Slang Indonesian Numbers
+            'seceng': 1000, 'noceng': 2000, 'goceng': 5000, 'ceban': 10000,
+            'capceng': 10000, 'noban': 20000, 'goban': 50000, 'cepek': 100,
+            'gopek': 500, 'gocap': 50, 'cepek ceng': 100000, 'cepek ribu': 100000,
+            'gopek ceng': 500000, 'gopek ribu': 500000, 'sejutaan': 1000000, 'seribuan': 1000
         };
 
         this.englishNumbers = {
@@ -27,281 +33,127 @@ class BilingualParser {
             'fourteen': 14, 'fifteen': 15, 'sixteen': 16, 'seventeen': 17,
             'eighteen': 18, 'nineteen': 19, 'twenty': 20, 'thirty': 30,
             'forty': 40, 'fifty': 50, 'sixty': 60, 'seventy': 70,
-            'eighty': 80, 'ninety': 90, 'hundred': 100, 'thousand': 1000
+            'eighty': 80, 'ninety': 90, 'hundred': 100,
+            'thousand': 1000, 'million': 1000000, 'billion': 1000000000
+        };
+
+        this.entertainmentKeywords = [
+            // Music & Concerts
+            'konser', 'tiket konser', 'gig', 'festival', 'musik', 'music', 'live music', 'concert', 'band',
+            // Gaming & Digital
+            'game', 'gaming', 'top up game', 'topup game', 'diamond', 'uc', 'voucher game', 'gacha', 'skin', 'battle pass',
+            'steam', 'playstation', 'ps store', 'ps5', 'ps4', 'xbox', 'nintendo', 'switch', 'mobile legends', 'free fire', 'pubg', 'valorant',
+            // Movies & Streaming
+            'nonton', 'bioskop', 'cinema', 'cgv', 'xxi', 'cinepolis', 'movie', 'film', 'theater', 'netflix', 'disney', 'prime video', 'hbo', 'spotify', 'apple music', 'youtube premium', 'streaming',
+            // Leisure & Vacations
+            'jalan jalan', 'jalan-jalan', 'liburan', 'traveling', 'travel', 'wisata', 'piknik', 'picnic', 'staycation',
+            'tiket masuk', 'tempat wisata', 'pantai', 'beach', 'gunung', 'resort', 'hotel', 'villa', 'amusement park', 'dufan', 'theme park', 'sightseeing', 'holiday',
+            // General Fun
+            'hiburan', 'refreshing', 'fun', 'senang senang', 'party', 'clubbing', 'karaoke', 'arcade', 'billiard', 'bowling'
+        ];
+
+        this.studyKeywordsStrong = [
+            // Books & Supplies
+            'buku', 'beli buku', 'ebook', 'novel', 'modul', 'materi', 'diktat', 'buku tulis', 'textbook', 'book', 'stationery',
+            'fotokopi', 'print', 'cetak', 'printing', 'photocopy',
+            'pensil', 'pencil', 'pulpen', 'pen', 'pena', 'penghapus', 'eraser', 'penggaris', 'ruler', 'stabilo', 'highlighter', 'spidol', 'marker', 'buku catatan', 'notebook', 'binder', 'kertas', 'paper',
+            // Courses & Learning
+            'les', 'bimbel', 'kursus', 'tutoring', 'privat', 'kelas', 'class', 'course', 'workshop', 'pelatihan', 'training', 'bootcamp', 'seminar', 'webinar', 'sertifikasi', 'certification',
+            // Tech & AI Tools
+            'ai', 'chatgpt', 'openai', 'gemini', 'claude', 'langganan ai', 'tools ai', 'software', 'aplikasi belajar', 'license', 'software license',
+            'coursera', 'udemy', 'skillshare', 'edx', 'duolingo',
+            // Academic
+            'sekolah', 'school', 'kuliah', 'college', 'kampus', 'campus', 'university', 'spp', 'uang sekolah', 'uang kuliah', 'tuition', 'tuition fee', 'semester', 'ukt',
+            'ujian', 'exam', 'exam fee', 'pendaftaran', 'registration', 'administrasi',
+            'belajar', 'study', 'studying', 'pendidikan', 'education', 'edukasi', 'akademik', 'academic'
+        ];
+
+        this.shoppingKeywordsStrong = [
+            // Apparel & Footwear
+            'baju', 'pakaian', 'clothes', 'clothing', 'kaos', 't-shirt', 'kemeja', 'shirt', 'celana', 'pants', 'trousers', 'jeans', 'jaket', 'jacket', 'hoodie', 'sweater', 'coat', 'dress', 'skirt', 'rok', 'gamis', 'hijab',
+            'sepatu', 'shoes', 'sneakers', 'boots', 'sandal', 'sandals', 'slippers', 'tas', 'bag', 'backpack', 'handbag', 'tote bag', 'dompet', 'wallet', 'topi', 'hat', 'cap', 'jam tangan', 'watch', 'aksesoris', 'accessories', 'sunglasses', 'kacamata',
+            // Personal Care & Beauty
+            'skincare', 'sabun', 'soap', 'body wash', 'sampo', 'shampoo', 'pasta gigi', 'toothpaste', 'deodorant',
+            'parfum', 'perfume', 'cologne', 'fragrance', 'kosmetik', 'cosmetics', 'make up', 'makeup', 'lipstick', 'lotion', 'bodycare', 'sunscreen', 'moisturizer',
+            // Shopping Channels & Actions
+            'belanja', 'shopping', 'shop', 'beli barang', 'checkout', 'cart', 'keranjang', 'mall', 'supermarket',
+            'tokopedia', 'shopee', 'lazada', 'tiktok shop', 'marketplace', 'amazon', 'ebay', 'zalora',
+            // Gadgets & Hardware
+            'hp', 'handphone', 'smartphone', 'iphone', 'android', 'laptop', 'macbook', 'pc', 'mouse', 'keyboard',
+            'headset', 'headphones', 'earphone', 'earphones', 'airpods', 'tws', 'charger', 'cable', 'powerbank', 'elektronik', 'gadget', 'gadgets'
+        ];
+
+        this.healthKeywordsStrong = [
+            // Pharmacy & Medicine
+            'obat', 'medicine', 'medication', 'pills', 'drugs', 'prescription', 'resep dokter', 'apotek', 'apotik', 'pharmacy', 'drugstore',
+            'vitamin', 'vitamins', 'suplemen', 'supplements', 'tablet', 'kapsul', 'capsule', 'sirup', 'syrup', 'antibiotik', 'antibiotics', 'jamu', 'herbal',
+            // Healthcare Facilities & Professionals
+            'dokter', 'doctor', 'physician', 'dokter gigi', 'dentist', 'klinik', 'clinic', 'rumah sakit', 'hospital', 'rs', 'puskesmas',
+            'cek kesehatan', 'check up', 'medical check up', 'medical checkup', 'lab', 'tes darah', 'blood test', 'rapid', 'swab', 'vaksin', 'vaccine',
+            // Fitness & Wellness
+            'gym', 'fitness', 'olahraga', 'workout', 'exercise', 'yoga', 'pilates', 'zumba', 'crossfit', 'aerobik',
+            'lari', 'running', 'sepeda', 'cycling', 'renang', 'swimming', 'badminton', 'futsal', 'tennis',
+            // Therapy & Mental Health
+            'terapi', 'therapy', 'konseling', 'counseling', 'psikolog', 'psychologist', 'psikiater', 'psychiatrist', 'mental health', 'meditasi', 'meditation', 'healing',
+            'relaksasi', 'spa', 'pijat', 'massage', 'reflexology', 'refleksi', 'salon', 'barbershop', 'haircut', 'potong rambut',
+            'sehat', 'kesehatan', 'health', 'wellness'
+        ];
+
+        this.transportKeywordsStrong = [
+            'transport', 'transportasi', 'transportation', 'commute',
+            'bensin', 'gas', 'gasoline', 'petrol', 'fuel', 'pertalite', 'pertamax', 'solar', 'diesel', 'spbu', 'shell', 'bp',
+            'ojol', 'gojek', 'goride', 'gocar', 'grab', 'grabcar', 'grabike', 'maxim', 'indrive', 'taxi', 'taksi', 'uber', 'lyft', 'cab', 'fare', 'ongkos',
+            'parkir', 'parking', 'tol', 'toll', 'e-toll', 'etoll', 'highway',
+            'bus', 'transjakarta', 'tj', 'busway', 'angkot', 'mikrolet', 'minibus',
+            'kereta', 'krl', 'commuter line', 'mrt', 'lrt', 'train', 'subway', 'metro', 'tiket kereta',
+            'pesawat', 'flight', 'plane', 'airplane', 'airline', 'tiket pesawat', 'bandara', 'airport', 'garuda', 'lion air', 'citilink', 'airasia',
+            'service motor', 'service mobil', 'bengkel', 'cuci motor', 'cuci mobil', 'car wash', 'tambal ban'
+        ];
+
+        this.billsKeywordsStrong = [
+            'bills', 'bill', 'tagihan', 'utilities', 'utility',
+            'listrik', 'electricity', 'electric bill', 'power bill', 'token listrik', 'pln',
+            'air', 'water', 'water bill', 'pdam',
+            'internet', 'wifi', 'broadband', 'indihome', 'biznet', 'myrepublic', 'first media',
+            'pulsa', 'phone bill', 'paket data', 'data plan', 'mobile data', 'sim card', 'telkomsel', 'indosat', 'xl', 'tri', 'smartfren',
+            'rent', 'rental', 'sewa', 'kos', 'kost', 'uang kos', 'sewa kos', 'kontrakan', 'apartment', 'apartemen', 'mortgage', 'cicilan rumah',
+            'ipl', 'maintenance', 'maintenance fee', 'service fee', 'iuran', 'iuran sampah', 'iuran keamanan', 'pbb', 'pajak',
+            'asuransi', 'insurance', 'bpjs', 'premi'
+        ];
+
+        this.incomeKeywords = [
+            'income', 'got', 'receive', 'received', 'earn', 'earned',
+            'salary', 'wage', 'paycheck', 'payroll', 'got paid', 'allowance', 'freelance', 'bonus', 'thr',
+            'terima', 'dapat', 'dapet', 'nemu', 'uang masuk', 'gaji', 'gajian', 'bayaran',
+            'honor', 'kiriman', 'terima transfer', 'dapat transfer', 'komisi', 'commission', 'profit', 'cuan',
+            'dividen', 'dividend', 'cashback', 'reimburse', 'reimbursement', 'refund', 'uang jajan dari'
+        ];
+
+        this.expenseVerbs = [
+            'beli', 'bayar', 'jajan', 'sewa', 'cicil', 'langganan', 'traktir', 'top up', 'topup',
+            'ongkos', 'biaya', 'uang sekolah', 'uang kuliah', 'tiket masuk', 'pesan', 'order',
+            'buy', 'bought', 'spend', 'spent', 'pay', 'paid', 'paid for', 'purchase', 'purchased', 'subscribe', 'rent'
+        ];
+
+        this.timeRefs = {
+            today: ['today', 'hari ini', 'tadi', 'barusan', 'this morning', 'just now'],
+            yesterday: ['yesterday', 'kemarin', 'kemaren', 'last night', 'semalam']
         };
 
         this.itemCategories = {
             'bread': 'food', 'roti': 'food', 'coffee': 'food', 'kopi': 'food',
             'tea': 'food', 'teh': 'food', 'lunch': 'food', 'makan': 'food',
-            'dinner': 'food', 'breakfast': 'food', 'sarapan': 'food',
-            'pizza': 'food', 'burger': 'food', 'sandwich': 'food',
+            'dinner': 'food', 'breakfast': 'food', 'sarapan': 'food', 'brunch': 'food',
+            'pizza': 'food', 'burger': 'food', 'sandwich': 'food', 'fries': 'food',
             'nasi': 'food', 'mie': 'food', 'bakso': 'food', 'soto': 'food',
             'jajan': 'food', 'warteg': 'food', 'padang': 'food', 'indomie': 'food',
             'nasi goreng': 'food', 'mie goreng': 'food', 'mie ayam': 'food',
             'sate': 'food', 'ayam goreng': 'food', 'ayam bakar': 'food',
             'rendang': 'food', 'pecel': 'food', 'rawon': 'food',
-            'gado gado': 'food', 'gado-gado': 'food', 'dimsum': 'food',
-            'ice cream': 'food', 'es krim': 'food', 'permen': 'food', 'coklat': 'food',
-            'keripik': 'food', 'kentang goreng': 'food', 'donat': 'food',
-            'martabak manis': 'food', 'martabak telur': 'food',
-            'siomay': 'food', 'batagor': 'food', 'cilok': 'food', 'cireng': 'food',
-            'sosis': 'food', 'nugget': 'food',
-            'roti tawar': 'food', 'roti bakar': 'food', 'croissant': 'food',
-            'cake': 'food', 'brownies': 'food', 'cupcake': 'food',
-            'kue lapis': 'food', 'kue bolu': 'food',
-            'es teh': 'food', 'es jeruk': 'food', 'susu': 'food',
-            'milkshake': 'food', 'jus buah': 'food', 'jus': 'food',
-            'teh botol': 'food', 'teh botol sosro': 'food',
-            'aqua': 'food', 'le minerale': 'food', 'cleo': 'food', 'vit': 'food',
-            'ades': 'food', 'teh pucuk harum': 'food', 'teh kotak': 'food',
-            'frestea': 'food', 'nu green tea': 'food',
-            'coca cola': 'food', 'coca-cola': 'food', 'fanta': 'food',
-            'sprite': 'food', 'pepsi': 'food',
-            'pocari sweat': 'food', 'mizone': 'food', 'isoplus': 'food',
-            'floridina': 'food', 'pulpy orange': 'food', 'buavita': 'food',
-            'ultra milk': 'food', 'ultramilk': 'food', 'indomilk': 'food',
-            'bear brand': 'food', 'cimory': 'food',
-            'good day': 'food', 'kapal api': 'food', 'torabika': 'food',
-            'abc coffee': 'food', 'nescafe': 'food',
-            'kopi kenangan': 'food', 'janji jiwa': 'food', 'fore coffee': 'food',
-            'tuku': 'food', 'point coffee': 'food', 'starbucks': 'food',
-            'chatime': 'food', 'mixue': 'food', 'haus': 'food', 'haus!': 'food',
-            'kopi soe': 'food',
-            'energen': 'food', 'milo': 'food', 'ovaltine': 'food',
-            'nutrisari': 'food', 'jasjus': 'food', 'pop ice': 'food',
-            'americano': 'food', 'latte': 'food', 'cappuccino': 'food', 'espresso': 'food',
-            'kopi susu': 'food', 'es kopi': 'food', 'es kopi susu': 'food', 'kopi hitam': 'food',
-            'kopi tubruk': 'food', 'kopi vietnam': 'food', 'cold brew': 'food',
-            'teh manis': 'food', 'teh tarik': 'food', 'teh tawar': 'food',
-            'lemon tea': 'food', 'green tea': 'food', 'thai tea': 'food',
-            'matcha': 'food', 'matcha latte': 'food', 'es matcha': 'food',
-            'coklat panas': 'food', 'hot chocolate': 'food',
-            'boba': 'food', 'bubble tea': 'food', 'milk tea': 'food',
-            'soda': 'food', 'cola': 'food', 'sparkling water': 'food',
-            'air mineral': 'food', 'air kelapa': 'food', 'coconut water': 'food',
-            'infused water': 'food', 'isotonic': 'food', 'electrolyte drink': 'food',
-            'yogurt drink': 'food', 'kefir': 'food',
-            'soy milk': 'food', 'almond milk': 'food', 'oat milk': 'food',
-            'es susu': 'food', 'es coklat': 'food',
-            'jus alpukat': 'food', 'jus jeruk': 'food', 'jus mangga': 'food', 'jus jambu': 'food', 'jus semangka': 'food',
-            'milkshake': 'food',
-            'minum': 'food', 'minuman': 'food',
-            'beli minum': 'food', 'beli makan': 'food',
-            'makan siang': 'food', 'makan malam': 'food',
-            'sarapan': 'food', 'brunch': 'food',
-            'ngemil': 'food', 'snack': 'food', 'cemal': 'food', 'beli cemal': 'food',
-            'cemal2': 'food',
-            'jajan doang': 'food', 'makan aja': 'food', 'makan doang': 'food',
-            'beli jajanan': 'food', 'beli snack': 'food', 'beli es': 'food',
-            'beli kopi': 'food', 'beli teh': 'food', 'beli jus': 'food', 'beli air': 'food',
-            'nongkrong': 'food', 'ngopi': 'food', 'cafe': 'food', 'hangout': 'food',
-            'nasi uduk': 'food', 'nasi kuning': 'food', 'nasi padang': 'food',
-            'ketoprak': 'food', 'lontong sayur': 'food', 'lontong': 'food', 'ketupat': 'food',
-            'sup': 'food', 'sup ayam': 'food', 'sup iga': 'food',
-            'capcay': 'food', 'tumis sayur': 'food', 'seafood': 'food',
-            'ikan bakar': 'food', 'lele': 'food', 'bebek goreng': 'food',
-            'ayam geprek': 'food', 'ayam bakar': 'food',
-            'steak': 'food', 'steak wagyu': 'food', 'bbq': 'food',
-            'pasta': 'food', 'spaghetti': 'food', 'ramen': 'food', 'udon': 'food',
-            'katsu': 'food', 'teriyaki': 'food',
-            'hotdog': 'food', 'hot dog': 'food', 'kebab': 'food', 'kebab turki': 'food', 'kebab': 'food',
-            'shawarma': 'food', 'burrito': 'food', 'taco': 'food', 'nachos': 'food',
-            'sub': 'food', 'wrap': 'food', 'toast': 'food',
-            'siomay': 'food', 'batagor': 'food', 'cilor': 'food', 'pentol': 'food',
-            'tahu crispy': 'food', 'tahu bulat': 'food', 'tahu goreng': 'food',
-            'martabak': 'food', 'terang bulan': 'food',
-            'dimsum': 'food', 'lumpia': 'food',
-            'kerupuk': 'food', 'emping': 'food', 'popcorn': 'food', 'kacang': 'food', 'kacang rebus': 'food',
-            'kuaci': 'food', 'wafer': 'food', 'crackers': 'food', 'rice cracker': 'food',
-            'pancake': 'food', 'waffle': 'food', 'crepes': 'food',
-            'dessert': 'food',
-            'gelato': 'food', 'puding': 'food', 'agar-agar': 'food', 'agar agar': 'food',
-            'tart': 'food', 'cheesecake': 'food', 'tiramisu': 'food', 'pie': 'food',
-            'churros': 'food', 'cookies': 'food', 'biskuit': 'food',
-            'panna cotta': 'food', 'custard': 'food', 'souffle': 'food', 'banana split': 'food',
-            'es teler': 'food', 'es campur': 'food', 'es doger': 'food', 'es cendol': 'food', 'es dawet': 'food',
-            'kolak': 'food', 'klepon': 'food', 'onde-onde': 'food',
-            'kue cubit': 'food', 'kue putu': 'food', 'kue pancong': 'food', 'kue pukis': 'food',
-            'lapis legit': 'food', 'nastar': 'food', 'kastengel': 'food', 'putri salju': 'food',
-            'mille crepes': 'food', 'macarons': 'food',
-            'baguette': 'food', 'focaccia': 'food', 'sourdough': 'food', 'bagel': 'food',
-            'cinnamon roll': 'food', 'danish': 'food', 'brioche': 'food', 'pastry': 'food', 'strudel': 'food', 'puff pastry': 'food',
-            'salad': 'food', 'fruit bowl': 'food', 'smoothie bowl': 'food', 'smoothie': 'food',
-            'oatmeal': 'food', 'overnight oats': 'food', 'chia pudding': 'food',
-            'protein shake': 'food', 'detox juice': 'food', 'salad wrap': 'food', 'quinoa': 'food',
-            'apel': 'food', 'jeruk': 'food', 'mangga': 'food', 'pisang': 'food', 'semangka': 'food',
-            'melon': 'food', 'anggur': 'food', 'stroberi': 'food', 'blueberry': 'food', 'kiwi': 'food',
-            'alpukat': 'food', 'pear': 'food', 'nanas': 'food', 'pepaya': 'food', 'jambu': 'food',
-            'rambutan': 'food', 'durian': 'food', 'salak': 'food', 'buah naga': 'food', 'kelapa': 'food',
-            'rice bowl': 'food', 'rice box': 'food', 'gyudon': 'food', 'yakiniku': 'food',
-            'sushi': 'food', 'sashimi': 'food', 'onigiri': 'food', 'takoyaki': 'food', 'okonomiyaki': 'food',
-            'bakmi': 'food', 'mie tek tek': 'food', 'mie godog': 'food', 'kwetiau': 'food', 'bihun': 'food',
-            'tom yum': 'food', 'pho': 'food', 'miso soup': 'food', 'seafood soup': 'food',
-            'ikan goreng': 'food', 'ikan asam manis': 'food', 'ikan rica-rica': 'food',
-            'ikan ric rica': 'food',
-            'ikan balado': 'food', 'ikan kuah kuning': 'food', 'ikan sambal matah': 'food',
-            'ikan pesmol': 'food', 'ikan woku': 'food', 'ikan steam': 'food', 'ikan tim': 'food',
-            'ikan panggang': 'food', 'ikan saus tiram': 'food', 'ikan saus padang': 'food',
-            'nila': 'food', 'gurame': 'food', 'kakap': 'food', 'tuna': 'food', 'tongkol': 'food',
-            'cakalang': 'food', 'salmon': 'food', 'dori': 'food', 'bandeng': 'food',
-            'tenggiri': 'food', 'kembung': 'food', 'bawal': 'food', 'patin': 'food', 'sarden': 'food',
-            'udang goreng': 'food', 'udang bakar': 'food', 'udang saus padang': 'food', 'udang asam manis': 'food',
-            'udang mentega': 'food', 'udang crispy': 'food', 'udang balado': 'food', 'udang tempura': 'food',
-            'udang tepung': 'food', 'ebi': 'food',
-            'cumi goreng': 'food', 'cumi bakar': 'food', 'cumi hitam': 'food', 'cumi asam manis': 'food',
-            'cumi saus tiram': 'food', 'cumi tepung': 'food', 'calamari': 'food',
-            'kepiting saus padang': 'food', 'kepiting saus tiram': 'food', 'kepiting asam manis': 'food',
-            'kepiting lada hitam': 'food', 'kepiting rebus': 'food', 'rajungan': 'food',
-            'crab': 'food', 'king crab': 'food',
-            'kerang hijau': 'food', 'kerang dara': 'food', 'kerang saus padang': 'food', 'kerang rebus': 'food',
-            'kerang bakar': 'food', 'kerang bambu': 'food',
-            'tiram': 'food', 'oyster': 'food', 'scallop': 'food',
-            'seafood platter': 'food', 'seafood pasta': 'food', 'seafood pizza': 'food',
-            'fish and chips': 'food', 'paella seafood': 'food', 'shrimp roll': 'food', 'lobster roll': 'food',
-            'clam chowder': 'food', 'grilled salmon': 'food',
-            'lobster': 'food', 'lobster bakar': 'food', 'lobster saus keju': 'food', 'lobster thermidor': 'food',
-            'seafood bucket': 'food', 'seafood boil': 'food',
-            'sup ikan': 'food', 'tom yum seafood': 'food', 'bakso ikan': 'food', 'pempek': 'food', 'otak-otak': 'food',
-            'seafood': 'food', 'laut': 'food', 'hasil laut': 'food',
-            'saus padang': 'food', 'saus tiram': 'food', 'asam manis': 'food', 'lada hitam': 'food',
-            'nasi liwet': 'food', 'nasi tim': 'food', 'nasi campur': 'food', 'nasi bakar': 'food', 'nasi tumpeng': 'food',
-            'bubur ayam': 'food', 'bubur kacang hijau': 'food', 'bubur sumsum': 'food',
-            'opor ayam': 'food', 'semur': 'food', 'sambal goreng ati': 'food', 'paru goreng': 'food',
-            'perkedel': 'food', 'bakwan': 'food', 'bala-bala': 'food', 'tempe goreng': 'food',
-            'pepes ikan': 'food', 'pepes tahu': 'food', 'pepes ayam': 'food',
-            'sayur asem': 'food', 'sayur lodeh': 'food', 'urap': 'food', 'lalapan': 'food',
-            'sambal': 'food', 'sambal matah': 'food', 'sambal terasi': 'food',
-            'fried chicken': 'food', 'chicken wings': 'food',
-            'mashed potato': 'food', 'onion rings': 'food', 'garlic bread': 'food',
-            'lasagna': 'food', 'mac and cheese': 'food', 'carbonara': 'food', 'bolognese': 'food',
-            'grilled chicken': 'food', 'smoked beef': 'food', 'hot plate': 'food', 'ribs': 'food', 'meatball': 'food',
-            'nutriboost': 'food', 'powerade': 'food', 'red bull': 'food', 'kratingdaeng': 'food',
-            'hemaviton drink': 'food', 'extra joss susu': 'food', 'm-150': 'food', 'panther': 'food',
-            'kukubima': 'food', 'lipovitan': 'food',
-            'coke': 'food', 'big cola': 'food', 'a&w': 'food', 'root beer': 'food', 'schweppes': 'food', 'mountain dew': 'food',
-            'teh botol': 'food', 'teh pucuk': 'food', 'teh kotak': 'food', 'ichi ocha': 'food', 'sosro': 'food',
-            'nipis madu': 'food',
-            'good day freeze': 'food', 'chocolatos drink': 'food', 'beng-beng drink': 'food', 'indocafe coffeemix': 'food',
-            'point coffee': 'food', 'excelso': 'food', 'anomali': 'food',
-            'ultra milk': 'food', 'indomilk': 'food', 'greenfields': 'food', 'frisian flag': 'food', 'dancow': 'food',
-            'yakult': 'food', 'cimory squeeze': 'food',
-            'buavita': 'food', 'minute maid': 'food', 'sunpride juice': 'food',
-            'chatime': 'food', 'xing fu tang': 'food', 'gong cha': 'food', 'koi': 'food', 'tiger sugar': 'food',
-            'brown sugar milk': 'food', 'taro': 'food',
-            'equil': 'food', 'pristine': 'food', 'club': 'food', 'le minerale': 'food',
-            'gas': 'transport', 'bensin': 'transport', 'fuel': 'transport',
-            'taxi': 'transport', 'grab': 'transport', 'gojek': 'transport',
-            'ojek': 'transport', 'ojol': 'transport', 'parkir': 'transport',
-            'parking': 'transport', 'tol': 'transport', 'toll': 'transport',
-            'rent': 'bills', 'kos': 'bills', 'electricity': 'bills',
-            'listrik': 'bills', 'internet': 'bills', 'wifi': 'bills',
-            'pulsa': 'bills', 'phone': 'bills', 'water': 'bills', 'air': 'bills',
-            'book': 'study', 'buku': 'study', 'textbook': 'study',
-            'course': 'study', 'kursus': 'study', 'kuliah': 'study',
-            'print': 'study', 'fotokopi': 'study',
-            'pensil': 'study', 'pencil': 'study', 'penghapus': 'study', 'eraser': 'study',
-            'pulpen': 'study', 'pen': 'study', 'bolpoin': 'study',
-            'spidol': 'study', 'marker': 'study', 'stabilo': 'study',
-            'penggaris': 'study', 'ruler': 'study',
-            'kertas': 'study', 'paper': 'study',
-            'notebook': 'study', 'binder': 'study',
-            'movie': 'entertainment', 'bioskop': 'entertainment',
-            'cinema': 'entertainment', 'game': 'entertainment',
-            'netflix': 'entertainment', 'spotify': 'entertainment',
-            'karaoke': 'entertainment', 'nonton': 'entertainment',
-            'clothes': 'shopping', 'baju': 'shopping', 'shirt': 'shopping',
-            'shoes': 'shopping', 'sepatu': 'shopping', 'bag': 'shopping',
-            'cosmetics': 'shopping', 'kosmetik': 'shopping',
-            'medicine': 'health', 'obat': 'health', 'doctor': 'health',
-            'dokter': 'health', 'hospital': 'health', 'clinic': 'health'
-        };
-
-        this.entertainmentKeywords = [
-            // Musik & Konser
-            'konser', 'tiket konser', 'gig', 'festival', 'musik', 'nonton band', 'live music', 'tiket event',
-            // Game & Digital Entertainment
-            'top up game', 'topup game', 'diamond', 'uc', 'voucher game', 'gacha', 'skin', 'battle pass',
-            'steam', 'playstation', 'ps store', 'xbox',
-            // Film & Streaming
-            'nonton', 'bioskop', 'cinema', 'cgv', 'xxi', 'netflix', 'disney', 'prime video', 'langganan film',
-            // Jalan-jalan & Rekreasi
-            'jalan jalan', 'jalan-jalan', 'liburan', 'traveling', 'wisata', 'piknik', 'staycation',
-            'tiket masuk', 'tempat wisata', 'pantai', 'gunung',
-            // Hiburan Umum
-            'hiburan', 'refreshing', 'fun', 'senang senang'
-        ];
-
-        this.studyKeywordsStrong = [
-            'buku', 'beli buku', 'ebook', 'novel', 'modul', 'materi', 'diktat', 'buku tulis',
-            'fotokopi', 'print', 'cetak',
-            'pensil', 'pulpen', 'pena', 'penghapus', 'penggaris', 'stabilo', 'spidol', 'buku catatan', 'notes',
-            'les', 'bimbel', 'kursus', 'tutoring', 'privat', 'kelas', 'workshop', 'pelatihan', 'bootcamp',
-            'ai', 'chatgpt', 'langganan ai', 'tools ai', 'software', 'aplikasi belajar',
-            'coursera', 'udemy', 'skillshare',
-            'sekolah', 'kuliah', 'kampus', 'spp', 'uang sekolah', 'uang kuliah', 'semester',
-            'ujian', 'pendaftaran', 'administrasi',
-            'belajar', 'study', 'pendidikan', 'edukasi', 'akademik'
-        ];
-
-        this.studyKeywordsWeak = [
-            'premium', 'pro', 'subscription'
-        ];
-
-        this.studyWeakAnchors = [
-            'ai', 'chatgpt', 'coursera', 'udemy', 'skillshare',
-            'belajar', 'study', 'pendidikan', 'edukasi',
-            'kursus', 'les', 'bimbel', 'kuliah', 'sekolah', 'kampus'
-        ];
-
-        this.shoppingKeywordsStrong = [
-            'baju', 'pakaian', 'kaos', 'kemeja', 'celana', 'jaket', 'hoodie',
-            'sepatu', 'sandal', 'tas', 'topi', 'jam', 'aksesoris',
-            'skincare', 'sabun', 'sampo', 'shampoo', 'pasta gigi', 'deodorant',
-            'parfum', 'kosmetik', 'make up', 'lotion', 'bodycare',
-            'belanja', 'shopping', 'beli barang', 'checkout', 'cart', 'keranjang',
-            'tokopedia', 'shopee', 'lazada', 'tiktok shop', 'marketplace',
-            'hp', 'handphone', 'smartphone', 'laptop', 'mouse', 'keyboard',
-            'headset', 'earphone', 'charger', 'powerbank', 'elektronik'
-        ];
-
-        this.shoppingKeywordsWeak = [
-            'barang', 'kebutuhan', 'beli'
-        ];
-
-        this.shoppingWeakAnchors = [
-            'barang', 'kebutuhan', 'shopping', 'belanja', 'beli barang',
-            'checkout', 'cart', 'keranjang',
-            'tokopedia', 'shopee', 'lazada', 'tiktok shop', 'marketplace'
-        ];
-
-        this.healthKeywordsStrong = [
-            'obat', 'apotek', 'vitamin', 'suplemen', 'tablet', 'kapsul', 'sirup',
-            'antibiotik', 'jamu', 'herbal',
-            'dokter', 'klinik', 'rumah sakit', 'rs', 'cek kesehatan', 'check up',
-            'medical check up', 'lab', 'tes darah', 'rapid', 'swab',
-            'gym', 'fitness', 'olahraga', 'workout', 'yoga', 'pilates', 'zumba',
-            'lari', 'sepeda', 'renang',
-            'terapi', 'konseling', 'psikolog', 'mental', 'meditasi', 'healing',
-            'relaksasi', 'spa', 'pijat',
-            'sehat', 'kesehatan', 'wellness'
-        ];
-
-        this.incomeKeywords = [
-            'income', 'got', 'receive', 'received', 'earn', 'earned',
-            'salary', 'wage', 'got paid', 'allowance', 'freelance', 'bonus',
-            'terima', 'dapat', 'dapet', 'uang masuk', 'gaji', 'gajian', 'bayaran',
-            'honor', 'kiriman', 'terima transfer', 'dapat transfer', 'komisi', 'profit', 'cuan'
-        ];
-
-        this.expenseVerbs = [
-            'beli', 'bayar', 'jajan', 'sewa', 'cicil', 'langganan', 'top up', 'topup',
-            'ongkos', 'biaya', 'uang sekolah', 'uang kuliah', 'uang makan', 'uang jajan', 'tiket masuk',
-            'buy', 'bought', 'spend', 'spent', 'pay', 'paid for'
-        ];
-
-        this.timeRefs = {
-            today: ['today', 'hari ini', 'tadi', 'barusan', 'this morning'],
-            yesterday: ['yesterday', 'kemarin', 'kemaren', 'last night']
+            'ice cream': 'food', 'es krim': 'food', 'snack': 'food', 'cemilan': 'food',
+            'groceries': 'food', 'belanja dapur': 'food', 'sayur': 'food', 'buah': 'food', 'daging': 'food',
+            'air mineral': 'food', 'mineral water': 'food', 'jus': 'food', 'juice': 'food',
+            'restaurant': 'food', 'resto': 'food', 'cafe': 'food', 'kafe': 'food'
         };
     }
 
@@ -341,7 +193,7 @@ class BilingualParser {
         const prefixed = new RegExp('\\b(?:' + prefixes.join('|') + ')' + escaped + '\\b', 'i');
         if (prefixed.test(text)) return true;
 
-        const suffixes = ['nya', 'in'];
+        const suffixes = ['nya', 'in', 'an', 's', 'ed', 'ing'];
         const suffixed = new RegExp('\\b' + escaped + '(?:' + suffixes.join('|') + ')?\\b', 'i');
         return suffixed.test(text);
     }
@@ -359,22 +211,137 @@ class BilingualParser {
         return null;
     }
 
+    // Pre-normalize spoken half, slang, and common speech artifacts
+    normalizePreParsing(text) {
+        let t = String(text || '').toLowerCase().trim();
+
+        // 1. Indonesian Half / Setengah
+        const idWordDigits = {
+            'satu': 1, 'dua': 2, 'tiga': 3, 'empat': 4, 'lima': 5,
+            'enam': 6, 'tujuh': 7, 'delapan': 8, 'sembilan': 9, 'sepuluh': 10
+        };
+
+        t = t.replace(/\b(\d+|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan)\s+setengah\s+(miliar|milyar|billion)\b/gi, (m, n) => {
+            const val = idWordDigits[n] !== undefined ? idWordDigits[n] : parseFloat(n);
+            return (val + 0.5) + ' miliar';
+        });
+        t = t.replace(/\bsetengah\s+(miliar|milyar|billion)\b/gi, '500 juta');
+
+        t = t.replace(/\b(\d+|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan)\s+setengah\s+(juta|jt|million)\b/gi, (m, n) => {
+            const val = idWordDigits[n] !== undefined ? idWordDigits[n] : parseFloat(n);
+            return (val + 0.5) + ' juta';
+        });
+        t = t.replace(/\bsetengah\s+(juta|jt|million)\b/gi, '500 ribu');
+
+        t = t.replace(/\b(\d+|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan)\s+setengah\s+(ribu|rb|rebu|thousand|k)\b/gi, (m, n) => {
+            const val = idWordDigits[n] !== undefined ? idWordDigits[n] : parseFloat(n);
+            return (val + 0.5) + ' ribu';
+        });
+        t = t.replace(/\bsetengah\s+(ribu|rb|rebu|thousand|k)\b/gi, '500');
+
+        // 2. English Half / And A Half
+        const enWordDigits = {
+            'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+            'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10
+        };
+
+        t = t.replace(/\b(\d+|one|two|three|four|five|six|seven|eight|nine)\s+and\s+a\s+half\s+(billion)\b/gi, (m, n) => {
+            const val = enWordDigits[n] !== undefined ? enWordDigits[n] : parseFloat(n);
+            return (val + 0.5) + ' billion';
+        });
+        t = t.replace(/\bhalf\s+a\s+billion\b/gi, '500 million');
+
+        t = t.replace(/\b(\d+|one|two|three|four|five|six|seven|eight|nine)\s+and\s+a\s+half\s+(million)\b/gi, (m, n) => {
+            const val = enWordDigits[n] !== undefined ? enWordDigits[n] : parseFloat(n);
+            return (val + 0.5) + ' million';
+        });
+        t = t.replace(/\bhalf\s+a\s+million\b/gi, '500 thousand');
+
+        t = t.replace(/\b(\d+|one|two|three|four|five|six|seven|eight|nine)\s+and\s+a\s+half\s+(thousand|k)\b/gi, (m, n) => {
+            const val = enWordDigits[n] !== undefined ? enWordDigits[n] : parseFloat(n);
+            return (val + 0.5) + ' thousand';
+        });
+        t = t.replace(/\bhalf\s+a\s+thousand\b/gi, '500');
+
+        // 3. Indonesian Slang Numbers
+        t = t.replace(/\bcepek\s+(?:ceng|ribu|rb)\b/gi, '100 ribu');
+        t = t.replace(/\bgopek\s+(?:ceng|ribu|rb)\b/gi, '500 ribu');
+        t = t.replace(/\bgoceng\b/gi, '5 ribu');
+        t = t.replace(/\bceban\b/gi, '10 ribu');
+        t = t.replace(/\bgoban\b/gi, '50 ribu');
+        t = t.replace(/\bseceng\b/gi, '1 ribu');
+        t = t.replace(/\bnoceng\b/gi, '2 ribu');
+        t = t.replace(/\bnoban\b/gi, '20 ribu');
+        t = t.replace(/\bcapceng\b/gi, '10 ribu');
+        t = t.replace(/\bsejutaan\b/gi, '1 juta');
+        t = t.replace(/\bseribuan\b/gi, '1 ribu');
+
+        return t;
+    }
+
+    splitCompoundSegments(raw) {
+        // Connector list regex ordered by length/specificity (including Gen Z / colloquial slang "ama", "ama juga")
+        const connectorPattern = /\b(?:dan\s+juga|sama\s+juga|ama\s+juga|terus\s+juga|trus\s+juga|dan\s+lagi|habis\s+itu|abis\s+itu|setelah\s+itu|and\s+then|as\s+well\s+as|along\s+with|after\s+that|sekalian|terus|trus|lalu|kemudian|lanjut|serta|plus|then|tapi|sedangkan|sementara|but|while|sama|ama|dan|and)\b|,/gi;
+
+        let match;
+        const pieces = [];
+        const connectors = [];
+        let lastIndex = 0;
+
+        while ((match = connectorPattern.exec(raw)) !== null) {
+            pieces.push(raw.substring(lastIndex, match.index).trim());
+            connectors.push(match[0]);
+            lastIndex = match.index + match[0].length;
+        }
+        pieces.push(raw.substring(lastIndex).trim());
+
+        if (pieces.length <= 1) return [raw];
+
+        const resultTxns = [];
+        let currentChunk = pieces[0];
+
+        for (let i = 1; i < pieces.length; i++) {
+            const conn = connectors[i - 1];
+            const nextPiece = pieces[i];
+
+            const currentAmt = this.extractAmount(currentChunk);
+            const nextAmt = this.extractAmount(nextPiece);
+
+            if (currentAmt > 0 && nextAmt > 0) {
+                // Both sides have valid amounts -> true transaction separation!
+                resultTxns.push(currentChunk.trim());
+                currentChunk = nextPiece.replace(/^(?:juga|lagi|also)\s+/i, '').trim();
+            } else {
+                // One side has no amount (e.g. "sama teman" / "dan donat 30k") -> merge!
+                currentChunk = currentChunk + ' ' + conn.trim() + ' ' + nextPiece;
+            }
+        }
+        if (currentChunk.trim()) {
+            resultTxns.push(currentChunk.trim());
+        }
+
+        return resultTxns.length > 1 ? resultTxns : [raw];
+    }
+
     parseMultiple(text, existingGoals) {
         const raw = String(text || '').trim();
         if (!raw) return [this.parse('', existingGoals)];
 
-        // Primary compound connectors
-        const connectorRegex = /\b(?:terus|lalu|kemudian|habis itu|setelah itu|lanjut|then|and then)\b|(?:,\s*|\s+\b(?:sama|dan|plus|and)\b\s+)(?=(?:beli|bayar|jajan|makan|minum|naik|top\s*up|nabung|tabung|simpan|ambil|tarik|terima|dapat|dapet|buy|bought|pay|paid|got|spend|spent|[a-zA-Z]+\s+\d))/i;
-
-        const parts = raw.split(connectorRegex).map(s => s.trim()).filter(Boolean);
+        const parts = this.splitCompoundSegments(raw);
         if (parts.length > 1) {
-            const parsedList = parts.map(p => this.parse(p, existingGoals)).filter(item => item.amount > 0);
+            const parsedList = parts.map(p => this.parse(p, existingGoals)).filter(item => item && item.amount > 0);
+
+            // Only accept multi-transaction split if we got at least 2 distinct parts with valid amounts (> 0)
             if (parsedList.length > 1) {
-                // Inherit yesterday date if mentioned anywhere in the sentence
                 const globalDate = this.extractDate(raw.toLowerCase());
-                parsedList.forEach(item => {
+                const hasExplicitGlobalDate = /\b(yesterday|today|last night|hari ini|kemarin|kemaren|tadi malam)\b/i.test(raw);
+
+                parsedList.forEach((item, idx) => {
                     if (item.intent === 'transaction') {
-                        item.date = globalDate;
+                        const clauseHasExplicitDate = /\b(yesterday|today|last night|hari ini|kemarin|kemaren|tadi malam)\b/i.test(parts[idx] || '');
+                        if (!clauseHasExplicitDate && hasExplicitGlobalDate) {
+                            item.date = globalDate;
+                        }
                     }
                 });
                 return parsedList;
@@ -385,9 +352,11 @@ class BilingualParser {
     }
 
     parse(text, existingGoals) {
-        const lower = text.toLowerCase().trim();
-        const savingInfo = this.detectSavingIntent(lower, existingGoals || []);
+        const preprocessed = this.normalizePreParsing(text);
+        const lower = preprocessed.toLowerCase().trim();
 
+        // Check saving intent (Bilingual ID / EN)
+        const savingInfo = this.detectSavingIntent(lower, existingGoals || []);
         if (savingInfo) {
             return {
                 original: text,
@@ -398,6 +367,7 @@ class BilingualParser {
             };
         }
 
+        // Standard financial transaction
         const detectedType = this.detectType(lower);
         return {
             original: text,
@@ -411,13 +381,34 @@ class BilingualParser {
     }
 
     extractAmount(text) {
-        const normalizedText = String(text)
+        const preprocessed = this.normalizePreParsing(text);
+        const normalizedText = String(preprocessed)
             .replace(/(\d)([a-zA-Z])/g, '$1 $2')
             .replace(/([a-zA-Z])(\d)/g, '$1 $2')
             .replace(/\s+/g, ' ')
             .trim();
 
         const t = normalizedText;
+
+        // Check for Discount / Diskon within the clause
+        const discountRegex = /\b(?:diskon|discount|potongan|cashback|off)\s+(.+)$/i;
+        const discountMatch = t.match(discountRegex);
+        if (discountMatch) {
+            const beforeDiscountText = t.substring(0, discountMatch.index).trim();
+            const afterDiscountText = discountMatch[1].trim();
+            const mainAmount = this._extractRawAmount(beforeDiscountText);
+            const discountAmount = this._extractRawAmount(afterDiscountText);
+            if (mainAmount > 0 && discountAmount > 0 && mainAmount >= discountAmount) {
+                return Math.round(mainAmount - discountAmount);
+            }
+            if (mainAmount > 0) return mainAmount;
+        }
+
+        return this._extractRawAmount(t);
+    }
+
+    _extractRawAmount(t) {
+        // 1. Spaced grouping (e.g., "50 000")
         const spacedGroupingPattern = /\b\d{1,3}(?:\s+\d{3})+\b/;
         const spacedGroupingMatch = t.match(spacedGroupingPattern);
         if (spacedGroupingMatch) {
@@ -425,43 +416,58 @@ class BilingualParser {
             if (!Number.isNaN(num) && num > 0) return num;
         }
 
-        const multiMultPattern = /(\d+(?:[.,]\d+)?)\s*(k|rb|ribu|rebu|thousand|juta|jt|million)\b/gi;
-        let multiMatch;
-        let sum = 0;
-        let multiFound = false;
-        while ((multiMatch = multiMultPattern.exec(t)) !== null) {
-            const num = parseFloat(String(multiMatch[1]).replace(',', '.'));
-            const mult = String(multiMatch[2] || '').toLowerCase();
-            if (Number.isNaN(num)) continue;
-            const factor = this.multipliers[mult];
-            if (!factor) continue;
-            sum += num * factor;
-            multiFound = true;
+        // 2. Hierarchical multi-multiplier pattern (e.g., "2 juta 500 ribu" -> 2.500.000)
+        const multiMultPattern = /(\d+(?:[.,]\d+)?)\s*(k|rb|ribu|rebu|thousand|juta|jt|million|miliar|milyar|billion)\b/gi;
+        const matches = [];
+        let m;
+        while ((m = multiMultPattern.exec(t)) !== null) {
+            const num = parseFloat(String(m[1]).replace(',', '.'));
+            const mult = String(m[2] || '').toLowerCase();
+            const factor = this.multipliers[mult] || 1;
+            if (!Number.isNaN(num)) {
+                matches.push({ val: num * factor, factor });
+            }
         }
 
+        if (matches.length > 0) {
+            // Check if matches are strictly hierarchical (descending scale)
+            let isHierarchical = true;
+            for (let i = 0; i < matches.length - 1; i++) {
+                if (matches[i].factor <= matches[i + 1].factor) {
+                    isHierarchical = false;
+                    break;
+                }
+            }
+            if (isHierarchical) {
+                return Math.round(matches.reduce((sum, item) => sum + item.val, 0));
+            }
+            // If not hierarchical (e.g. multiple distinct items without split), take the primary match
+            return Math.round(matches[0].val);
+        }
+
+        // 3. Spoken word parser
         const fromWords = this.extractAmountFromWords(t);
-        if (fromWords > 0) {
-            if (multiFound && sum > 0) return Math.round(Math.max(sum, fromWords));
-            return fromWords;
-        }
+        if (fromWords > 0) return fromWords;
 
-        if (multiFound && sum > 0) return Math.round(sum);
-
+        // 4. Single spoken numbers
         const idBaseValue = this.findBestSpokenNumberMatch(t, this.spokenNumbers);
         if (idBaseValue !== null) {
             if (/\b(ribu|rb|rebu)\b/i.test(t)) return idBaseValue * 1000;
             if (/\b(juta|jt)\b/i.test(t)) return idBaseValue * 1000000;
-            if (idBaseValue >= 1000) return idBaseValue;
+            if (/\b(miliar|milyar|billion)\b/i.test(t)) return idBaseValue * 1000000000;
+            return idBaseValue;
         }
 
         const enBaseValue = this.findBestSpokenNumberMatch(t, this.englishNumbers);
         if (enBaseValue !== null) {
             if (/\b(thousand|k)\b/i.test(t)) return enBaseValue * 1000;
             if (/\bmillion\b/i.test(t)) return enBaseValue * 1000000;
-            if (enBaseValue >= 1000) return enBaseValue;
+            if (/\bbillion\b/i.test(t)) return enBaseValue * 1000000000;
+            return enBaseValue;
         }
 
-        const multPattern = /(\d+(?:[.,]\d+)?)\s*(k|rb|ribu|rebu|thousand|juta|jt|million)/i;
+        // 5. Standard single multiplier
+        const multPattern = /(\d+(?:[.,]\d+)?)\s*(k|rb|ribu|rebu|thousand|juta|jt|million|miliar|milyar|billion)/i;
         let match = t.match(multPattern);
         if (match) {
             const num = parseFloat(match[1].replace(',', '.'));
@@ -471,15 +477,18 @@ class BilingualParser {
             }
         }
 
+        // 6. Plain formatted number (e.g., "50.000" or "50000")
         const plainPattern = /\d{1,3}(?:[.,]\d{3})+|\d{4,}/;
         match = t.match(plainPattern);
-        if (match) return parseInt(match[0].replace(/[.,]/g, ''));
+        if (match) return parseInt(match[0].replace(/[.,]/g, ''), 10);
 
+        // 7. Small number
         const smallNumPattern = /\b(\d+)\b/;
         match = t.match(smallNumPattern);
         if (match) {
-            const num = parseInt(match[1]);
+            const num = parseInt(match[1], 10);
             if (num < 100 && /\b(ribu|rb|k|thousand)\b/i.test(t)) return num * 1000;
+            if (num < 100 && /\b(juta|jt|million)\b/i.test(t)) return num * 1000000;
             return num;
         }
 
@@ -525,42 +534,11 @@ class BilingualParser {
         if (t === 'belas' || t === 'puluh' || t === 'ratus') return true;
         if (t === 'ribu' || t === 'rb' || t === 'rebu') return true;
         if (t === 'juta' || t === 'jt' || t === 'million') return true;
+        if (t === 'miliar' || t === 'milyar' || t === 'billion') return true;
         if (t === 'thousand' || t === 'hundred' || t === 'k') return true;
-        if (t === 'sepuluh' || t === 'sebelas' || t === 'seratus' || t === 'seribu' || t === 'sejuta') return true;
+        if (t === 'sepuluh' || t === 'sebelas' || t === 'seratus' || t === 'seribu' || t === 'sejuta' || t === 'semiliar') return true;
         if (Object.prototype.hasOwnProperty.call(this.spokenNumbers, t)) return true;
         if (Object.prototype.hasOwnProperty.call(this.englishNumbers, t)) return true;
-        return false;
-    }
-
-    detectShopping(text) {
-        for (const kw of this.shoppingKeywordsStrong) {
-            if (!kw) continue;
-            if (this.keywordMatches(text, kw)) return true;
-        }
-
-        let hasWeak = false;
-        for (const kw of this.shoppingKeywordsWeak) {
-            if (!kw) continue;
-            if (this.keywordMatches(text, kw)) {
-                hasWeak = true;
-                break;
-            }
-        }
-        if (!hasWeak) return false;
-
-        for (const a of this.shoppingWeakAnchors) {
-            if (!a) continue;
-            if (this.keywordMatches(text, a)) return true;
-        }
-
-        return false;
-    }
-
-    detectHealth(text) {
-        for (const kw of this.healthKeywordsStrong) {
-            if (!kw) continue;
-            if (this.keywordMatches(text, kw)) return true;
-        }
         return false;
     }
 
@@ -595,6 +573,7 @@ class BilingualParser {
             if (t === 'seratus') { current += 100; seen = true; continue; }
             if (t === 'seribu') { applyScale(1000); seen = true; continue; }
             if (t === 'sejuta') { applyScale(1000000); seen = true; continue; }
+            if (t === 'semiliar') { applyScale(1000000000); seen = true; continue; }
 
             if (Object.prototype.hasOwnProperty.call(unit, t)) {
                 current += unit[t];
@@ -629,6 +608,12 @@ class BilingualParser {
 
             if (t === 'juta' || t === 'jt') {
                 applyScale(1000000);
+                seen = true;
+                continue;
+            }
+
+            if (t === 'miliar' || t === 'milyar') {
+                applyScale(1000000000);
                 seen = true;
                 continue;
             }
@@ -698,30 +683,76 @@ class BilingualParser {
                 seen = true;
                 continue;
             }
+
+            if (t === 'billion') {
+                applyScale(1000000000);
+                seen = true;
+                continue;
+            }
         }
 
         const value = total + current;
         return seen ? value : 0;
     }
 
+    // Contextual Precedence for Income vs Expense
     detectType(text) {
-        for (const verb of this.expenseVerbs) {
-            if (this.keywordMatches(text, verb)) return 'expense';
+        const lower = text.toLowerCase().trim();
+
+        // 1. Explicit Reimbursement or Refund is ALWAYS Income
+        if (/\b(?:dapat|terima|got|received?)\s+(?:ganti|reimburse|reimbursement|refund|cashback|kembalian)\b/i.test(lower)) {
+            return 'income';
         }
-        for (const keyword of this.incomeKeywords) {
-            if (this.keywordMatches(text, keyword)) return 'income';
+        if (/\b(?:reimburse|reimbursement|refund|cashback)\b/i.test(lower)) {
+            return 'income';
         }
+
+        // 2. Explicit Income Nouns & Sources
+        const strongIncomeWords = [
+            'gaji', 'gajian', 'salary', 'wage', 'paycheck', 'payroll', 'thr',
+            'dividen', 'dividend', 'profit', 'cuan', 'komisi', 'commission',
+            'freelance', 'honor', 'bonus', 'uang masuk', 'allowance', 'stipend',
+            'uang saku', 'uang jajan', 'uang makan'
+        ];
+
+        for (const kw of strongIncomeWords) {
+            if (this.keywordMatches(lower, kw)) {
+                // If preceded by explicit payment verb like "bayar gaji karyawan" or "kasih uang saku", it's expense
+                if (/\b(?:bayar|pay|paid|kasih|beri|berikan|give)\s+(?:gaji|salary|honor|bonus|allowance|uang\s*saku|uang\s*jajan)/i.test(lower)) {
+                    return 'expense';
+                }
+                return 'income';
+            }
+        }
+
+        // 3. Reception Verbs vs Action Expense Verbs (Precedence check)
+        const receptionRegex = /\b(?:terima|dapat|dapet|nemu|receive|received|got|earned|earn)\b/i;
+        const expenseActionRegex = /\b(?:beli|bayar|jajan|sewa|cicil|langganan|traktir|top\s*up|topup|buy|bought|pay|paid|spend|spent|purchase|order|pesan)\b/i;
+
+        const recMatch = lower.match(receptionRegex);
+        const expMatch = lower.match(expenseActionRegex);
+
+        if (recMatch && (!expMatch || recMatch.index < expMatch.index)) {
+            // E.g., "Terima uang makan", "Dapat uang bensin", "Got 50k", "Received allowance"
+            return 'income';
+        }
+
+        if (expMatch) {
+            return 'expense';
+        }
+
         return 'expense';
     }
 
     detectIncomeCategory(text) {
         const incomeMap = {
-            salary: ['gaji', 'gajian', 'salary', 'wage', 'upah', 'paycheck', 'allowance', 'uang saku', 'uang bulanan'],
-            freelance: ['freelance', 'proyek', 'project', 'klien', 'client', 'honor', 'bayaran', 'komisi', 'jasa', 'side hustle'],
-            bonus: ['bonus', 'thr', 'insentif', 'reward', 'hadiah lomba', 'cashback'],
-            investment: ['dividen', 'dividend', 'saham', 'crypto', 'bunga', 'investasi', 'investment', 'profit', 'cuan', 'reksadana', 'trading'],
-            gift: ['hadiah', 'gift', 'angpao', 'kiriman', 'transfer', 'dikasih', 'sedekah']
+            salary: ['gaji', 'gajian', 'salary', 'wage', 'upah', 'paycheck', 'payroll', 'allowance', 'uang saku', 'uang bulanan'],
+            freelance: ['freelance', 'proyek', 'project', 'klien', 'client', 'honor', 'bayaran', 'komisi', 'commission', 'jasa', 'side hustle', 'consulting'],
+            bonus: ['bonus', 'thr', 'insentif', 'incentive', 'reward', 'hadiah lomba', 'cashback', 'reimburse', 'reimbursement', 'refund'],
+            investment: ['dividen', 'dividend', 'saham', 'stock', 'crypto', 'bunga', 'interest', 'investasi', 'investment', 'profit', 'cuan', 'reksadana', 'trading'],
+            gift: ['hadiah', 'gift', 'angpao', 'kiriman', 'transfer', 'dikasih', 'sedekah', 'tip', 'tips']
         };
+
         for (const [cat, keywords] of Object.entries(incomeMap)) {
             for (const kw of keywords) {
                 if (this.keywordMatches(text, kw)) return cat;
@@ -731,10 +762,14 @@ class BilingualParser {
     }
 
     detectCategory(text) {
-        if (this.detectEntertainment(text)) return 'entertainment';
+        if (this.detectBills(text)) return 'bills';
+        if (this.detectTransport(text)) return 'transport';
         if (this.detectStudy(text)) return 'study';
         if (this.detectHealth(text)) return 'health';
+        if (this.detectEntertainment(text)) return 'entertainment';
         if (this.detectShopping(text)) return 'shopping';
+        if (this.detectFood(text)) return 'food';
+
         for (const [item, category] of Object.entries(this.itemCategories)) {
             if (item.includes(' ')) {
                 if (text.includes(item)) return category;
@@ -746,9 +781,35 @@ class BilingualParser {
         return 'other';
     }
 
+    detectFood(text) {
+        const foodKws = [
+            'makan', 'minum', 'jajan', 'sarapan', 'lunch', 'dinner', 'breakfast', 'brunch', 'supper',
+            'ngopi', 'coffee', 'tea', 'teh', 'kopi', 'cafe', 'kafe', 'resto', 'restaurant',
+            'warteg', 'padang', 'indomie', 'mcd', 'mcdonalds', 'kfc', 'burger', 'pizza', 'bakery', 'bread', 'cake',
+            'snack', 'cemilan', 'groceries', 'grocery', 'supermarket', 'pasar', 'indomaret', 'alfamart'
+        ];
+        for (const kw of foodKws) {
+            if (this.keywordMatches(text, kw)) return true;
+        }
+        return false;
+    }
+
+    detectBills(text) {
+        for (const kw of this.billsKeywordsStrong) {
+            if (this.keywordMatches(text, kw)) return true;
+        }
+        return false;
+    }
+
+    detectTransport(text) {
+        for (const kw of this.transportKeywordsStrong) {
+            if (this.keywordMatches(text, kw)) return true;
+        }
+        return false;
+    }
+
     detectEntertainment(text) {
         for (const kw of this.entertainmentKeywords) {
-            if (!kw) continue;
             if (this.keywordMatches(text, kw)) return true;
         }
         return false;
@@ -756,25 +817,22 @@ class BilingualParser {
 
     detectStudy(text) {
         for (const kw of this.studyKeywordsStrong) {
-            if (!kw) continue;
             if (this.keywordMatches(text, kw)) return true;
         }
+        return false;
+    }
 
-        let hasWeak = false;
-        for (const kw of this.studyKeywordsWeak) {
-            if (!kw) continue;
-            if (this.keywordMatches(text, kw)) {
-                hasWeak = true;
-                break;
-            }
+    detectShopping(text) {
+        for (const kw of this.shoppingKeywordsStrong) {
+            if (this.keywordMatches(text, kw)) return true;
         }
-        if (!hasWeak) return false;
+        return false;
+    }
 
-        for (const a of this.studyWeakAnchors) {
-            if (!a) continue;
-            if (this.keywordMatches(text, a)) return true;
+    detectHealth(text) {
+        for (const kw of this.healthKeywordsStrong) {
+            if (this.keywordMatches(text, kw)) return true;
         }
-
         return false;
     }
 
@@ -804,75 +862,136 @@ class BilingualParser {
 
     extractDescription(text) {
         let clean = text;
-        clean = clean.replace(/\d+(?:[.,]\d+)?\s*(k|rb|ribu|rebu|thousand|juta|jt|million)/gi, '');
+        clean = clean.replace(/\d+(?:[.,]\d+)?\s*(k|rb|ribu|rebu|thousand|juta|jt|million|miliar|billion)/gi, '');
         clean = clean.replace(/\b\d{4,}\b/g, '');
-        clean = clean.replace(/\b(today|yesterday|hari ini|kemarin|kemaren|tadi|barusan)\b/gi, '');
-        const spokenNumbersPattern = /\b(nol|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|belas|puluh|ratus|ribu|rb|rebu|juta|jt|seribu|sejuta)\b/gi;
+        clean = clean.replace(/\b(today|yesterday|hari ini|kemarin|kemaren|tadi|barusan|last night)\b/gi, '');
+
+        const spokenNumbersPattern = /\b(nol|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|belas|puluh|ratus|ribu|rb|rebu|juta|jt|seribu|sejuta|semiliar|setengah|goceng|ceban|goban|seceng|noceng|noban|cepek|gopek)\b/gi;
         clean = clean.replace(spokenNumbersPattern, '');
-        const englishNumbersPattern = /\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million)\b/gi;
+
+        const englishNumbersPattern = /\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion|half)\b/gi;
         clean = clean.replace(englishNumbersPattern, '');
+
         clean = clean.replace(/\b\d+\b/g, '');
         clean = clean.replace(/\s+/g, ' ').trim();
         if (clean.length < 3) return text;
         return clean;
     }
 
+    // Fully Bilingual (ID & EN) Saving Detection
     detectSavingIntent(text, existingGoals) {
         const lower = text.toLowerCase();
 
-        const savingKeywords = ['tabung', 'nabung', 'menabung', 'tabungan', 'simpan'];
-        const withdrawKeywords = ['ambil', 'tarik'];
-        const generalMarkers = ['tabunganku', 'tabungan saya'];
-        const prepositions = ['ke', 'untuk', 'di', 'buat'];
+        const savingKeywords = [
+            'tabung', 'nabung', 'menabung', 'tabungan', 'simpan',
+            'save', 'saving', 'saved', 'deposit', 'depositing'
+        ];
+        const withdrawKeywords = [
+            'ambil', 'tarik',
+            'withdraw', 'withdrawing', 'withdrew', 'pull out', 'take out'
+        ];
+        const generalMarkers = [
+            'tabunganku', 'tabungan saya', 'tabungan umum',
+            'my savings', 'general savings', 'savings account', 'savings', 'tabungan'
+        ];
+        const prepositions = [
+            'ke', 'untuk', 'di', 'buat', 'dari',
+            'to', 'for', 'into', 'in', 'towards', 'from'
+        ];
 
-        const isWithdraw = withdrawKeywords.some(kw => lower.includes(kw)) &&
-            (lower.includes('tabungan') || generalMarkers.some(gm => lower.includes(gm)));
-        const isDeposit = !isWithdraw && savingKeywords.some(kw => lower.includes(kw));
+        const hasWithdrawKw = withdrawKeywords.some(kw => this.keywordMatches(lower, kw));
+        const hasSavingKw = savingKeywords.some(kw => this.keywordMatches(lower, kw));
+
+        const isWithdraw = hasWithdrawKw && (
+            lower.includes('tabung') ||
+            lower.includes('saving') ||
+            lower.includes('emergency') ||
+            lower.includes('darurat') ||
+            generalMarkers.some(gm => lower.includes(gm)) ||
+            (existingGoals || []).some(g => lower.includes(g.name.toLowerCase().trim()))
+        );
+
+        const isDeposit = !isWithdraw && hasSavingKw;
 
         if (!isWithdraw && !isDeposit) return null;
 
         const action = isWithdraw ? 'withdraw' : 'deposit';
 
-        // Check explicit general markers first
-        if (generalMarkers.some(gm => lower.includes(gm))) {
-            return { action, goalName: null };
-        }
-
-        // Strip saving/withdraw keywords and prepositions to extract candidate words
+        // Strip action keywords and prepositions to extract candidate goal name
         let stripped = lower;
-        [...savingKeywords, ...withdrawKeywords, ...prepositions, 'tabungan'].forEach(kw => {
-            stripped = stripped.replace(new RegExp('\\b' + kw + '\\b', 'g'), ' ');
+        [...savingKeywords, ...withdrawKeywords, ...prepositions, 'tabungan', 'savings'].forEach(kw => {
+            stripped = stripped.replace(new RegExp('\\b' + this.escapeRegex(kw) + '\\b', 'g'), ' ');
         });
 
-        // Remove numbers (digits and spoken)
-        stripped = stripped.replace(/\d+(?:[.,]\d+)?\s*(k|rb|ribu|thousand|juta|jt|million)?/gi, ' ');
-        stripped = stripped.replace(/\b(nol|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|belas|puluh|ratus|seribu|sejuta)\b/gi, ' ');
-        stripped = stripped.replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+        // Remove numbers (digits, slang, and spoken words)
+        stripped = stripped.replace(/\d+(?:[.,]\d+)?\s*(k|rb|ribu|thousand|juta|jt|million|miliar|billion)?/gi, ' ');
+        stripped = stripped.replace(/\b(nol|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|belas|puluh|ratus|seribu|sejuta|setengah|zero|one|two|three|four|five|six|seven|eight|nine|ten|hundred|thousand|million|half)\b/gi, ' ');
+        stripped = stripped.replace(/\b(goceng|ceban|goban|cepek|gopek|seceng|noban)\b/gi, ' ');
+        stripped = stripped.replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
 
-        // Try to match any word against existing goal names
-        const goalNames = (existingGoals || []).map(g => g.name.toLowerCase().trim());
+        // Try to match against existing goal names preserving original casing
         const words = stripped.split(' ').filter(w => w.length > 1);
 
-        let matchedGoal = null;
-        for (const goalName of goalNames) {
-            // Full goal name match
-            if (stripped.includes(goalName)) {
-                matchedGoal = goalName;
+        const goalSynonyms = {
+            'japan': 'jepang', 'jepang': 'japan',
+            'car': 'mobil', 'mobil': 'car',
+            'house': 'rumah', 'rumah': 'house',
+            'wedding': 'nikah', 'nikah': 'wedding',
+            'holiday': 'liburan', 'liburan': 'holiday', 'vacation': 'liburan',
+            'emergency': 'darurat', 'darurat': 'emergency',
+            'fund': 'dana', 'dana': 'fund',
+            'college': 'kuliah', 'kuliah': 'college',
+            'school': 'sekolah', 'sekolah': 'school',
+            'laptop': 'laptop', 'pc': 'komputer', 'computer': 'komputer',
+            'phone': 'hp', 'gadget': 'hp',
+            'umroh': 'umroh', 'haji': 'haji', 'hajj': 'haji',
+            'invest': 'investasi', 'investment': 'investasi',
+            'retirement': 'pensiun', 'pensiun': 'retirement'
+        };
+
+        let matchedGoalObj = null;
+        for (const g of (existingGoals || [])) {
+            const goalName = (g.name || '').toLowerCase().trim();
+            if (!goalName) continue;
+            if (stripped.includes(goalName) || lower.includes(goalName)) {
+                matchedGoalObj = g;
                 break;
             }
-            // Any single word match
             const goalWords = goalName.split(' ');
             for (const gw of goalWords) {
                 if (words.includes(gw) && gw.length > 2) {
-                    matchedGoal = goalName;
+                    matchedGoalObj = g;
+                    break;
+                }
+                const syn = goalSynonyms[gw];
+                if (syn && (words.includes(syn) || stripped.includes(syn))) {
+                    matchedGoalObj = g;
                     break;
                 }
             }
-            if (matchedGoal) break;
+            if (matchedGoalObj) break;
         }
 
-        return { action, goalName: matchedGoal };
+        // Check if any word in stripped has a synonym matching an existing goal
+        if (!matchedGoalObj) {
+            for (const w of words) {
+                const syn = goalSynonyms[w];
+                if (syn) {
+                    const found = (existingGoals || []).find(g => (g.name || '').toLowerCase().trim().includes(syn));
+                    if (found) {
+                        matchedGoalObj = found;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // If explicit general markers used and no goal matched, returns null (general savings)
+        return { action, goalName: matchedGoalObj ? matchedGoalObj.name : null };
     }
 }
 
 const parser = new BilingualParser();
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { BilingualParser, parser };
+}

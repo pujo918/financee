@@ -547,6 +547,12 @@
 
         <!-- ======== VOICE INPUT ======== -->
         <div class="voice-section">
+            <div class="voice-ambient-waves" aria-hidden="true">
+                <svg viewBox="0 0 600 120" preserveAspectRatio="none">
+                    <path d="M0,60 C150,20 200,100 350,55 C450,20 520,80 600,60" fill="none" stroke="currentColor" stroke-width="1.8" />
+                    <path d="M0,60 C100,85 240,25 360,70 C460,100 540,40 600,60" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 4" />
+                </svg>
+            </div>
             <div class="voice-language-badge">
                 <svg class="ui-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 <span id="voiceLangDisplay">English + Indonesian</span>
@@ -555,8 +561,18 @@
             <p style="margin-bottom: 20px; opacity: 0.9; font-size: 0.95rem;">
                 Ucapkan transaksi atau tabungan secara natural
             </p>
-            <button class="voice-button" id="voiceButton">
+            <button class="voice-button" id="voiceButton" aria-label="Aktifkan Input Suara">
                 <img src="" alt="Theme Avatar" class="voice-avatar" id="voiceAvatar" />
+                <div class="voice-original-symbol" id="voiceOriginalSymbol" aria-hidden="true">
+                    <span class="v-pulse-ring ring-1"></span>
+                    <span class="v-pulse-ring ring-2"></span>
+                    <svg class="voice-mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" y1="19" x2="12" y2="22"/>
+                        <line x1="8" y1="22" x2="16" y2="22"/>
+                    </svg>
+                </div>
             </button>
             <div class="voice-status" id="voiceStatus">Tap untuk mulai</div>
             <div class="voice-result" id="voiceResult"></div>

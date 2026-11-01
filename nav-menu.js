@@ -92,24 +92,43 @@
     function applyImageTheme(themeName) {
         const theme = themeName || localStorage.getItem(IMAGE_THEME_KEY) || IMAGE_THEME_DEFAULT;
         const root = document.documentElement;
-        root.style.setProperty('--img-body-bg', `url("${getImagePath('naruto (12)', theme)}")`);
-        root.style.setProperty('--img-income', `url("${getImagePath('naruto__2_-removebg-preview', theme)}")`);
-        root.style.setProperty('--img-expense', `url("${getImagePath('naruto__3_-removebg-preview', theme)}")`);
-        root.style.setProperty('--img-net', `url("${getImagePath('naruto__5_-removebg-preview', theme)}")`);
-        root.style.setProperty('--img-rate', `url("${getImagePath('naruto__6_-removebg-preview', theme)}")`);
-        root.style.setProperty('--img-voice-left', `url("${getImagePath('naruto__1_-removebg-preview', theme)}")`);
-        root.style.setProperty('--img-voice-right', `url("${getImagePath('naruto__10_-removebg-preview', theme)}")`);
+
+        if (theme === 'original') {
+            root.style.setProperty('--img-body-bg', 'none');
+            root.style.setProperty('--img-income', 'none');
+            root.style.setProperty('--img-expense', 'none');
+            root.style.setProperty('--img-net', 'none');
+            root.style.setProperty('--img-rate', 'none');
+            root.style.setProperty('--img-voice-left', 'none');
+            root.style.setProperty('--img-voice-right', 'none');
+        } else {
+            root.style.setProperty('--img-body-bg', `url("${getImagePath('naruto (12)', theme)}")`);
+            root.style.setProperty('--img-income', `url("${getImagePath('naruto__2_-removebg-preview', theme)}")`);
+            root.style.setProperty('--img-expense', `url("${getImagePath('naruto__3_-removebg-preview', theme)}")`);
+            root.style.setProperty('--img-net', `url("${getImagePath('naruto__5_-removebg-preview', theme)}")`);
+            root.style.setProperty('--img-rate', `url("${getImagePath('naruto__6_-removebg-preview', theme)}")`);
+            root.style.setProperty('--img-voice-left', `url("${getImagePath('naruto__1_-removebg-preview', theme)}")`);
+            root.style.setProperty('--img-voice-right', `url("${getImagePath('naruto__10_-removebg-preview', theme)}")`);
+        }
 
         const avatar = document.getElementById('voiceAvatar');
-        if (avatar) avatar.src = getImagePath('naruto', theme);
+        if (avatar) {
+            if (theme === 'original') {
+                avatar.style.display = 'none';
+            } else {
+                avatar.style.display = '';
+                avatar.src = getImagePath('naruto', theme);
+            }
+        }
 
-        document.body.classList.remove('naruto', 'onepiece');
+        document.body.classList.remove('naruto', 'onepiece', 'original');
         document.body.classList.add(theme);
     }
 
     function setImageTheme(themeName) {
         const previous = localStorage.getItem(IMAGE_THEME_KEY) || IMAGE_THEME_DEFAULT;
-        const next = themeName === 'onepiece' ? 'onepiece' : IMAGE_THEME_DEFAULT;
+        const validThemes = ['original', 'naruto', 'onepiece'];
+        const next = validThemes.includes(themeName) ? themeName : IMAGE_THEME_DEFAULT;
         const select = document.getElementById('animeThemeSelect');
         if (select) select.value = next;
         if (previous === next) return;
@@ -133,6 +152,7 @@
         select.id = 'animeThemeSelect';
         select.className = 'anime-theme-select';
         select.innerHTML = `
+            <option value="original">Original</option>
             <option value="naruto">Naruto</option>
             <option value="onepiece">One Piece</option>
         `;
@@ -152,23 +172,35 @@
             'Build your treasure, one step at a time!',
             'Navigate your budget like a captain!'
         ];
-        const pool = theme === 'onepiece' ? onePieceQuotes : narutoQuotes;
+        const originalQuotes = [
+            'Disiplin finansial hari ini adalah kemerdekaan finansial masa depan.',
+            'Ukur setiap rupiah pengeluaran, bangun masa depan dengan rencana.',
+            'Bukan seberapa banyak yang dihasilkan, tapi seberapa bijak mengelolanya.'
+        ];
+        const pool = theme === 'original' ? originalQuotes : (theme === 'onepiece' ? onePieceQuotes : narutoQuotes);
         return pool[Math.floor(Math.random() * pool.length)];
     }
 
     function applyThemeCopy(theme) {
         const isOnePiece = theme === 'onepiece';
+        const isOriginal = theme === 'original';
         const quote = document.getElementById('dailyQuote');
         if (quote) quote.textContent = `"${pickThemeQuote(theme)}"`;
 
         const summaryTitle = document.querySelector('#monthlyDashboard .section-title span');
-        if (summaryTitle) summaryTitle.innerHTML = `${SVG_ICONS.dashboard} <span>${isOnePiece ? 'Grand Line Summary' : 'Konoha Monthly Summary'}</span>`;
+        if (summaryTitle) {
+            summaryTitle.innerHTML = `${SVG_ICONS.dashboard} <span>${isOriginal ? 'Ringkasan Keuangan Bulanan' : (isOnePiece ? 'Grand Line Summary' : 'Konoha Monthly Summary')}</span>`;
+        }
 
         const alltimeTitle = document.querySelector('#alltimeDashboard .section-title span');
-        if (alltimeTitle) alltimeTitle.innerHTML = `${SVG_ICONS.globe} <span>${isOnePiece ? 'Sea Voyage Summary' : 'Shinobi All-Time Summary'}</span>`;
+        if (alltimeTitle) {
+            alltimeTitle.innerHTML = `${SVG_ICONS.globe} <span>${isOriginal ? 'Ringkasan Finansial All-Time' : (isOnePiece ? 'Sea Voyage Summary' : 'Shinobi All-Time Summary')}</span>`;
+        }
 
         const voiceTitle = document.querySelector('.voice-section h2');
-        if (voiceTitle) voiceTitle.innerHTML = `${SVG_ICONS.mic} <span>${isOnePiece ? 'Crew Voice Log' : 'Shinobi Voice Input'}</span>`;
+        if (voiceTitle) {
+            voiceTitle.innerHTML = `${SVG_ICONS.mic} <span>${isOriginal ? 'Catat Keuangan Lewat Suara' : (isOnePiece ? 'Crew Voice Log' : 'Shinobi Voice Input')}</span>`;
+        }
 
         const h1 = document.querySelector('header h1');
         if (h1) h1.textContent = isOnePiece ? 'FINANCE VOYAGE' : 'FINANCE TRACKER';
@@ -182,7 +214,9 @@
             toast.className = 'theme-toast';
             document.body.appendChild(toast);
         }
-        toast.textContent = theme === 'onepiece' ? 'Set sail to Grand Line!' : 'Back to Hidden Leaf mode!';
+        toast.textContent = theme === 'original'
+            ? 'Beralih ke Tema Original!'
+            : (theme === 'onepiece' ? 'Set sail to Grand Line!' : 'Back to Hidden Leaf mode!');
         toast.classList.add('show');
         clearTimeout(toast._timer);
         toast._timer = setTimeout(() => toast.classList.remove('show'), 1800);
@@ -218,15 +252,23 @@
         const percentEl = document.getElementById('themeLoaderPercent');
         const fillEl = document.getElementById('themeLoaderFill');
 
-        loader.classList.remove('naruto', 'onepiece');
+        loader.classList.remove('naruto', 'onepiece', 'original');
         loader.classList.add(nextTheme);
 
         if (textEl) {
-            textEl.textContent = nextTheme === 'onepiece'
-                ? 'Set sail to Grand Line!'
-                : 'Returning to Hidden Leaf Village...';
+            if (nextTheme === 'original') {
+                textEl.textContent = 'Memuat tema Original...';
+            } else if (nextTheme === 'onepiece') {
+                textEl.textContent = 'Set sail to Grand Line!';
+            } else {
+                textEl.textContent = 'Returning to Hidden Leaf Village...';
+            }
         }
-        if (logoEl) logoEl.innerHTML = nextTheme === 'onepiece' ? SVG_ICONS.helm : SVG_ICONS.shuriken;
+        if (logoEl) {
+            if (nextTheme === 'original') logoEl.innerHTML = SVG_ICONS.wallet;
+            else if (nextTheme === 'onepiece') logoEl.innerHTML = SVG_ICONS.helm;
+            else logoEl.innerHTML = SVG_ICONS.shuriken;
+        }
 
         let progress = 1;
         if (percentEl) percentEl.textContent = `${progress}%`;
@@ -240,14 +282,22 @@
             if (percentEl) percentEl.textContent = `${progress}%`;
             if (fillEl) fillEl.style.width = `${progress}%`;
             if (textEl && progress >= 40 && progress < 85) {
-                textEl.textContent = nextTheme === 'onepiece'
-                    ? 'Charting the ocean route...'
-                    : 'Gathering chakra energy...';
+                if (nextTheme === 'original') {
+                    textEl.textContent = 'Menata visual finansial modern...';
+                } else if (nextTheme === 'onepiece') {
+                    textEl.textContent = 'Charting the ocean route...';
+                } else {
+                    textEl.textContent = 'Gathering chakra energy...';
+                }
             }
             if (textEl && progress >= 85) {
-                textEl.textContent = nextTheme === 'onepiece'
-                    ? 'Crew ready. Prepare to sail!'
-                    : 'Shinobi mode almost ready!';
+                if (nextTheme === 'original') {
+                    textEl.textContent = 'Tema Original siap digunakan!';
+                } else if (nextTheme === 'onepiece') {
+                    textEl.textContent = 'Crew ready. Prepare to sail!';
+                } else {
+                    textEl.textContent = 'Shinobi mode almost ready!';
+                }
             }
 
             if (progress >= 100) {
@@ -326,8 +376,9 @@
                     </div>
                 </div>
                 <div class="mobile-settings" style="margin-top:12px;">
-                    <div class="mobile-setting-label">Tema Karakter</div>
+                    <div class="mobile-setting-label">Tema Tampilan</div>
                     <div class="mobile-toggle-row">
+                        <button class="mobile-toggle-btn ${currentImageTheme === 'original' ? 'active' : ''}" id="mobileOriginal">Original</button>
                         <button class="mobile-toggle-btn ${currentImageTheme === 'naruto' ? 'active' : ''}" id="mobileNaruto">Naruto</button>
                         <button class="mobile-toggle-btn ${currentImageTheme === 'onepiece' ? 'active' : ''}" id="mobileOnePiece">One Piece</button>
                     </div>
@@ -366,13 +417,25 @@
             setTheme('light');
             setActiveMobileBtns('mobileLight', 'mobileDark');
         });
+
+        function setActiveThemeMobile(activeId) {
+            ['mobileOriginal', 'mobileNaruto', 'mobileOnePiece'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('active', id === activeId);
+            });
+        }
+
+        document.getElementById('mobileOriginal').addEventListener('click', function () {
+            setImageTheme('original');
+            setActiveThemeMobile('mobileOriginal');
+        });
         document.getElementById('mobileNaruto').addEventListener('click', function () {
             setImageTheme('naruto');
-            setActiveMobileBtns('mobileNaruto', 'mobileOnePiece');
+            setActiveThemeMobile('mobileNaruto');
         });
         document.getElementById('mobileOnePiece').addEventListener('click', function () {
             setImageTheme('onepiece');
-            setActiveMobileBtns('mobileOnePiece', 'mobileNaruto');
+            setActiveThemeMobile('mobileOnePiece');
         });
     }
 

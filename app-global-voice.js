@@ -155,6 +155,26 @@ document.addEventListener('DOMContentLoaded', function () {
     updateVoiceSuggestions();
 });
 
+function selectBestAlternative(primaryText, alternativesList) {
+    if (!alternativesList || alternativesList.length === 0) return primaryText;
+    const goals = getSavingsGoals();
+
+    const primaryParsed = parser.parseMultiple(primaryText, goals);
+    if (primaryParsed.some(p => p.amount > 0)) {
+        return primaryText;
+    }
+
+    for (const altText of alternativesList) {
+        if (!altText || altText === primaryText) continue;
+        const altParsed = parser.parseMultiple(altText, goals);
+        if (altParsed.some(p => p.amount > 0)) {
+            console.log("Voice Engine: used alternative ->", altText);
+            return altText;
+        }
+    }
+    return primaryText;
+}
+
 function initVoiceRecognition() {
     if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
         const status = document.getElementById('voiceStatus');
@@ -173,35 +193,57 @@ function initVoiceRecognition() {
     window.recognition = recognition;
 
     recognition.onstart = () => {
+        const lang = localStorage.getItem('voiceLang') || currentLang || 'id-ID';
+        const isEn = lang.startsWith('en');
         const s = document.getElementById('voiceStatus');
         const r = document.getElementById('voiceResult');
-        if (s) s.textContent = '● Mendengarkan...';
-        if (r) r.innerHTML = '<div style="opacity:0.7;">Memproses suara...</div>';
+        if (s) s.textContent = isEn ? '● Listening...' : '● Mendengarkan...';
+        if (r) r.innerHTML = `<div style="opacity:0.7;">${isEn ? 'Processing voice...' : 'Memproses suara...'}</div>`;
     };
 
     recognition.onresult = (event) => {
         let final = '', interim = '';
+        const collectedAlternatives = [];
         for (let i = event.resultIndex; i < event.results.length; i++) {
-            const t = event.results[i][0].transcript;
-            if (event.results[i].isFinal) final += t + ' ';
-            else interim += t + ' ';
+            const res = event.results[i];
+            const t = res[0].transcript;
+            if (res.isFinal) {
+                final += t + ' ';
+                for (let a = 0; a < res.length; a++) {
+                    if (res[a] && res[a].transcript) {
+                        collectedAlternatives.push(res[a].transcript.trim());
+                    }
+                }
+            } else {
+                interim += t + ' ';
+            }
         }
         const transcript = (final + interim).trim();
         if (!transcript) return;
 
-        const safeTranscript = window.escapeHtml ? window.escapeHtml(transcript) : transcript;
+        const bestTranscript = final.trim()
+            ? selectBestAlternative(final.trim(), collectedAlternatives)
+            : transcript;
+
+        const safeTranscript = window.escapeHtml ? window.escapeHtml(bestTranscript) : bestTranscript;
         const resEl = document.getElementById('voiceResult');
+        const lang = localStorage.getItem('voiceLang') || currentLang || 'id-ID';
+        const isEn = lang.startsWith('en');
         if (resEl) {
             resEl.innerHTML = `
-                <div style="margin-bottom:8px;"><strong>Terdengar:</strong> "${safeTranscript}"</div>
-                <div style="font-size:0.85rem;opacity:0.8;">${final.trim() ? 'Menganalisis...' : 'Mendengarkan...'}</div>
+                <div style="margin-bottom:8px;"><strong>${isEn ? 'Heard:' : 'Terdengar:'}</strong> "${safeTranscript}"</div>
+                <div style="font-size:0.85rem;opacity:0.8;">${final.trim() ? (isEn ? 'Analyzing...' : 'Menganalisis...') : (isEn ? 'Listening...' : 'Mendengarkan...')}</div>
             `;
         }
-        if (final.trim()) setTimeout(() => parseVoiceInput(final.trim()), 150);
+        if (final.trim()) setTimeout(() => parseVoiceInput(bestTranscript), 150);
     };
 
     recognition.onerror = (event) => {
-        const msg = event.error === 'no-speech' ? 'Tidak terdengar suara.' : 'Tidak dapat memahami suara. Coba lagi.';
+        const lang = localStorage.getItem('voiceLang') || currentLang || 'id-ID';
+        const isEn = lang.startsWith('en');
+        const msg = event.error === 'no-speech'
+            ? (isEn ? 'No speech heard.' : 'Tidak terdengar suara.')
+            : (isEn ? 'Could not understand voice. Please try again.' : 'Tidak dapat memahami suara. Coba lagi.');
         const s = document.getElementById('voiceStatus');
         const r = document.getElementById('voiceResult');
         if (s) s.textContent = msg;
@@ -257,28 +299,69 @@ function parseVoiceInput(text) {
     if (!resEl) return;
 
     const esc = window.escapeHtml || (s => s);
+    const lang = localStorage.getItem('voiceLang') || currentLang || 'id-ID';
+    const isEn = lang.startsWith('en');
 
     if (parsedList.length > 1) {
-        const totalAmt = parsedList.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+        let totalIncome = 0;
+        let totalExpense = 0;
+        let totalSaving = 0;
+
         const rowsHtml = parsedList.map((it, idx) => {
             if (it.intent === 'saving') {
-                return `<div style="margin-bottom:4px;">${idx + 1}. <strong>◈ Tabungan (${esc(it.goalName || 'Umum')})</strong>: ${it.action === 'deposit' ? '+' : '−'}Rp ${it.amount.toLocaleString('id-ID')}</div>`;
+                totalSaving += it.amount || 0;
+                const actionText = it.action === 'deposit' ? (isEn ? 'Deposit' : 'Simpan') : (isEn ? 'Withdraw' : 'Tarik');
+                return `<div style="margin-bottom:4px;">${idx + 1}. <strong>◈ ${isEn ? 'Savings' : 'Tabungan'} (${esc(it.goalName || (isEn ? 'General' : 'Umum'))})</strong>: ${it.action === 'deposit' ? '+' : '−'}Rp ${it.amount.toLocaleString('id-ID')} (${actionText})</div>`;
+            }
+            if (it.type === 'income') {
+                totalIncome += it.amount || 0;
+            } else {
+                totalExpense += it.amount || 0;
             }
             const badge = typeof window.getCategoryBadgeHtml === 'function' ? window.getCategoryBadgeHtml(it.category || 'other') : '';
+            const sign = it.type === 'income' ? '+' : '−';
+            const col = it.type === 'income' ? 'var(--success)' : 'var(--danger)';
             return `<div style="margin-bottom:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
                 <span>${idx + 1}.</span> ${badge} <strong>${esc(it.category || 'other')}</strong>
                 <span>(${esc(it.description || '-')})</span>:
-                <strong>Rp ${it.amount.toLocaleString('id-ID')}</strong>
+                <strong style="color:${col};">${sign}Rp ${it.amount.toLocaleString('id-ID')}</strong>
             </div>`;
         }).join('');
 
+        let totalsSummary = '';
+        if (totalIncome > 0 && totalExpense > 0) {
+            totalsSummary = `
+                <div style="border-top:1px solid rgba(255,255,255,0.25);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
+                    <span>${isEn ? 'Total Income' : 'Total Masuk'}: <strong style="color:var(--success);">+Rp ${totalIncome.toLocaleString('id-ID')}</strong></span>
+                    <span>${isEn ? 'Total Expense' : 'Total Keluar'}: <strong style="color:var(--danger);">−Rp ${totalExpense.toLocaleString('id-ID')}</strong></span>
+                </div>
+            `;
+        } else if (totalIncome > 0) {
+            totalsSummary = `
+                <div style="border-top:1px solid rgba(255,255,255,0.25);margin-top:6px;padding-top:6px;">
+                    ${isEn ? 'Total Income' : 'Total Pemasukan'}: <strong style="color:var(--success);">+Rp ${totalIncome.toLocaleString('id-ID')}</strong>
+                </div>
+            `;
+        } else if (totalExpense > 0) {
+            totalsSummary = `
+                <div style="border-top:1px solid rgba(255,255,255,0.25);margin-top:6px;padding-top:6px;">
+                    Total: <strong>Rp ${totalExpense.toLocaleString('id-ID')}</strong>
+                </div>
+            `;
+        }
+        if (totalSaving > 0) {
+            totalsSummary += `
+                <div style="border-top:1px solid rgba(255,255,255,0.15);margin-top:4px;padding-top:4px;">
+                    ${isEn ? 'Total Savings' : 'Total Tabungan'}: <strong style="color:var(--accent-secondary);">Rp ${totalSaving.toLocaleString('id-ID')}</strong>
+                </div>
+            `;
+        }
+
         resEl.innerHTML = `
             <div style="background:rgba(255,255,255,0.16);padding:12px;border-radius:8px;line-height:1.7;text-align:left;max-width:460px;margin:0 auto;">
-                <strong>✓ Terdeteksi ${parsedList.length} Transaksi Sekaligus</strong><br>
+                <strong>✓ ${isEn ? `Detected ${parsedList.length} Transactions` : `Terdeteksi ${parsedList.length} Transaksi Sekaligus`}</strong><br>
                 ${rowsHtml}
-                <div style="border-top:1px solid rgba(255,255,255,0.25);margin-top:6px;padding-top:6px;">
-                    Total: <strong>Rp ${totalAmt.toLocaleString('id-ID')}</strong>
-                </div>
+                ${totalsSummary}
             </div>
         `;
 
@@ -293,17 +376,22 @@ function parseVoiceInput(text) {
     const parsed = parsedList[0];
 
     if (parsed.intent === 'saving') {
+        const actionLabel = parsed.action === 'deposit' 
+            ? (isEn ? '+ Deposit' : '+ Simpan') 
+            : (isEn ? '− Withdraw' : '− Tarik');
+        const goalLabel = esc(parsed.goalName || (isEn ? 'General' : 'Umum'));
+
         resEl.innerHTML = `
             <div style="background:rgba(255,255,255,0.16);padding:12px;border-radius:8px;line-height:1.8;text-align:left;max-width:420px;margin:0 auto;">
-                <strong>◈ Ringkasan Tabungan</strong><br>
-                ▸ Nominal: Rp ${parsed.amount.toLocaleString('id-ID')}<br>
-                ▸ Aksi: ${parsed.action === 'deposit' ? '+ Simpan' : '− Tarik'}<br>
-                ▸ Tujuan: <strong>${esc(parsed.goalName || 'Umum')}</strong>
+                <strong>◈ ${isEn ? 'Savings Summary' : 'Ringkasan Tabungan'}</strong><br>
+                ▸ ${isEn ? 'Amount' : 'Nominal'}: Rp ${parsed.amount.toLocaleString('id-ID')}<br>
+                ▸ ${isEn ? 'Action' : 'Aksi'}: ${actionLabel}<br>
+                ▸ ${isEn ? 'Goal' : 'Tujuan'}: <strong>${goalLabel}</strong>
             </div>
         `;
 
         if (parsed.amount === 0) {
-            resEl.innerHTML += `<div style="background:rgba(237,137,54,0.3);margin-top:10px;padding:12px;border-radius:8px;color:white;">[!] Nominal tidak terdeteksi.<br><small>Contoh: "nabung 50 ribu"</small></div>`;
+            resEl.innerHTML += `<div style="background:rgba(237,137,54,0.3);margin-top:10px;padding:12px;border-radius:8px;color:white;">[!] ${isEn ? 'Amount not detected.<br><small>Example: "save 50 thousand for Japan"</small>' : 'Nominal tidak terdeteksi.<br><small>Contoh: "nabung 50 ribu ke Jepang"</small>'}</div>`;
             return;
         }
 
@@ -318,18 +406,22 @@ function parseVoiceInput(text) {
 
     } else {
         const catBadge = typeof window.getCategoryBadgeHtml === 'function' ? window.getCategoryBadgeHtml(parsed.category || 'other') : '';
+        const typeLabel = parsed.type === 'income'
+            ? (isEn ? '+ Income' : '+ Pemasukan')
+            : (isEn ? '− Expense' : '− Pengeluaran');
+
         resEl.innerHTML = `
             <div style="background:rgba(255,255,255,0.16);padding:12px;border-radius:8px;line-height:1.8;text-align:left;max-width:420px;margin:0 auto;">
-                <strong>Ringkasan Transaksi</strong><br>
-                ▸ Nominal: Rp ${parsed.amount.toLocaleString('id-ID')}<br>
-                ▸ Tipe: ${parsed.type === 'income' ? '+ Pemasukan' : '− Pengeluaran'}<br>
-                ▸ Kategori: ${catBadge} <strong>${esc(parsed.category || 'other')}</strong><br>
-                ▸ Catatan: ${esc(parsed.description || '-')}
+                <strong>${isEn ? 'Transaction Summary' : 'Ringkasan Transaksi'}</strong><br>
+                ▸ ${isEn ? 'Amount' : 'Nominal'}: Rp ${parsed.amount.toLocaleString('id-ID')}<br>
+                ▸ ${isEn ? 'Type' : 'Tipe'}: ${typeLabel}<br>
+                ▸ ${isEn ? 'Category' : 'Kategori'}: ${catBadge} <strong>${esc(parsed.category || 'other')}</strong><br>
+                ▸ ${isEn ? 'Notes' : 'Catatan'}: ${esc(parsed.description || '-')}
             </div>
         `;
 
         if (parsed.amount === 0) {
-            resEl.innerHTML += `<div style="background:rgba(237,137,54,0.3);margin-top:10px;padding:12px;border-radius:8px;color:white;">[!] Nominal tidak terdeteksi.<br><small>Contoh: "beli makan 25 ribu"</small></div>`;
+            resEl.innerHTML += `<div style="background:rgba(237,137,54,0.3);margin-top:10px;padding:12px;border-radius:8px;color:white;">[!] ${isEn ? 'Amount not detected.<br><small>Example: "buy coffee 25 thousand"</small>' : 'Nominal tidak terdeteksi.<br><small>Contoh: "beli makan 25 ribu"</small>'}</div>`;
             return;
         }
 
@@ -354,19 +446,75 @@ function showConfirmModal() {
     if (!dc) return;
 
     const esc = window.escapeHtml || (s => s);
+    const lang = localStorage.getItem('voiceLang') || currentLang || 'id-ID';
+    const isEn = lang.startsWith('en');
 
     if (voiceTransaction.intent === 'batch') {
-        const totalAmt = voiceTransaction.items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+        let totalIncome = 0;
+        let totalExpense = 0;
+        let totalSaving = 0;
+
+        voiceTransaction.items.forEach(it => {
+            if (it.intent === 'saving') {
+                totalSaving += it.amount || 0;
+            } else if (it.type === 'income') {
+                totalIncome += it.amount || 0;
+            } else {
+                totalExpense += it.amount || 0;
+            }
+        });
+
+        let summaryRows = '';
+        if (totalIncome > 0 && totalExpense > 0) {
+            summaryRows = `
+                <div class="confirm-item">
+                    <span class="confirm-label">${isEn ? 'Total Income' : 'Total Masuk'}</span>
+                    <span class="confirm-value" style="color:var(--success);">+Rp ${totalIncome.toLocaleString('id-ID')}</span>
+                </div>
+                <div class="confirm-item">
+                    <span class="confirm-label">${isEn ? 'Total Expense' : 'Total Keluar'}</span>
+                    <span class="confirm-value" style="color:var(--danger);">−Rp ${totalExpense.toLocaleString('id-ID')}</span>
+                </div>
+                <div class="confirm-item">
+                    <span class="confirm-label">${isEn ? 'Net Difference' : 'Selisih Bersih'}</span>
+                    <span class="confirm-value" style="color:var(--accent-primary);">${totalIncome - totalExpense >= 0 ? '+' : '−'}Rp ${Math.abs(totalIncome - totalExpense).toLocaleString('id-ID')}</span>
+                </div>
+            `;
+        } else if (totalIncome > 0) {
+            summaryRows = `
+                <div class="confirm-item">
+                    <span class="confirm-label">${isEn ? 'Total Income' : 'Total Pemasukan'}</span>
+                    <span class="confirm-value" style="color:var(--success);">+Rp ${totalIncome.toLocaleString('id-ID')}</span>
+                </div>
+            `;
+        } else if (totalExpense > 0) {
+            summaryRows = `
+                <div class="confirm-item">
+                    <span class="confirm-label">${isEn ? 'Total Expense' : 'Total Pengeluaran'}</span>
+                    <span class="confirm-value" style="color:var(--accent-primary);">Rp ${totalExpense.toLocaleString('id-ID')}</span>
+                </div>
+            `;
+        }
+        if (totalSaving > 0) {
+            summaryRows += `
+                <div class="confirm-item">
+                    <span class="confirm-label">${isEn ? 'Total Savings' : 'Total Tabungan'}</span>
+                    <span class="confirm-value" style="color:var(--accent-secondary);">Rp ${totalSaving.toLocaleString('id-ID')}</span>
+                </div>
+            `;
+        }
+
         dc.innerHTML = `
             <div class="confirm-item">
-                <span class="confirm-label">Jumlah Item</span>
-                <span class="confirm-value">${voiceTransaction.items.length} Transaksi Sekaligus</span>
+                <span class="confirm-label">${isEn ? 'Item Count' : 'Jumlah Item'}</span>
+                <span class="confirm-value">${voiceTransaction.items.length} ${isEn ? 'Batch Items' : 'Transaksi Sekaligus'}</span>
             </div>
             ${voiceTransaction.items.map((it, idx) => {
                 if (it.intent === 'saving') {
+                    const actionSym = it.action === 'deposit' ? '+' : '−';
                     return `<div class="confirm-item">
-                        <span class="confirm-label">#${idx + 1} Tabungan (${esc(it.goalName || 'Umum')})</span>
-                        <span class="confirm-value">${it.action === 'deposit' ? '+' : '−'}Rp ${it.amount.toLocaleString('id-ID')}</span>
+                        <span class="confirm-label">#${idx + 1} ${isEn ? 'Savings' : 'Tabungan'} (${esc(it.goalName || (isEn ? 'General' : 'Umum'))})</span>
+                        <span class="confirm-value" style="color:var(--accent-secondary);">${actionSym}Rp ${it.amount.toLocaleString('id-ID')}</span>
                     </div>`;
                 }
                 const badge = typeof window.getCategoryBadgeHtml === 'function' ? window.getCategoryBadgeHtml(it.category || 'other') : '';
@@ -377,26 +525,29 @@ function showConfirmModal() {
                     </span>
                 </div>`;
             }).join('')}
-            <div class="confirm-item">
-                <span class="confirm-label">Total Nominal</span>
-                <span class="confirm-value" style="color:var(--accent-primary);">Rp ${totalAmt.toLocaleString('id-ID')}</span>
-            </div>
+            ${summaryRows}
         `;
     } else if (voiceTransaction.intent === 'saving') {
+        const actionText = voiceTransaction.action === 'deposit' 
+            ? (isEn ? '+ Deposit' : '+ Simpan') 
+            : (isEn ? '− Withdraw' : '− Tarik');
         dc.innerHTML = `
-            <div class="confirm-item"><span class="confirm-label">Jenis</span><span class="confirm-value" style="color:var(--accent-secondary);">◈ Tabungan</span></div>
-            <div class="confirm-item"><span class="confirm-label">Aksi</span><span class="confirm-value">${voiceTransaction.action === 'deposit' ? '+ Simpan' : '− Tarik'}</span></div>
-            <div class="confirm-item"><span class="confirm-label">Nominal</span><span class="confirm-value">Rp ${voiceTransaction.amount.toLocaleString('id-ID')}</span></div>
-            <div class="confirm-item"><span class="confirm-label">Tujuan</span><span class="confirm-value">${esc(voiceTransaction.goalName || 'Umum')}</span></div>
+            <div class="confirm-item"><span class="confirm-label">${isEn ? 'Type' : 'Jenis'}</span><span class="confirm-value" style="color:var(--accent-secondary);">◈ ${isEn ? 'Savings' : 'Tabungan'}</span></div>
+            <div class="confirm-item"><span class="confirm-label">${isEn ? 'Action' : 'Aksi'}</span><span class="confirm-value">${actionText}</span></div>
+            <div class="confirm-item"><span class="confirm-label">${isEn ? 'Amount' : 'Nominal'}</span><span class="confirm-value">Rp ${voiceTransaction.amount.toLocaleString('id-ID')}</span></div>
+            <div class="confirm-item"><span class="confirm-label">${isEn ? 'Goal' : 'Tujuan'}</span><span class="confirm-value">${esc(voiceTransaction.goalName || (isEn ? 'General' : 'Umum'))}</span></div>
         `;
     } else {
         const catBadge = typeof window.getCategoryBadgeHtml === 'function' ? window.getCategoryBadgeHtml(voiceTransaction.category) : '';
+        const typeText = voiceTransaction.type === 'income' 
+            ? `<span style="color:var(--success);">${isEn ? '+ Income' : '+ Pemasukan'}</span>` 
+            : `<span style="color:var(--danger);">${isEn ? '− Expense' : '− Pengeluaran'}</span>`;
         dc.innerHTML = `
-            <div class="confirm-item"><span class="confirm-label">Jenis</span><span class="confirm-value">${voiceTransaction.type === 'income' ? '<span style="color:var(--success);">+ Pemasukan</span>' : '<span style="color:var(--danger);">− Pengeluaran</span>'}</span></div>
-            <div class="confirm-item"><span class="confirm-label">Nominal</span><span class="confirm-value">Rp ${voiceTransaction.amount.toLocaleString('id-ID')}</span></div>
-            <div class="confirm-item"><span class="confirm-label">Kategori</span><span class="confirm-value" style="display:inline-flex;align-items:center;">${catBadge} ${esc(voiceTransaction.category)}</span></div>
-            <div class="confirm-item"><span class="confirm-label">Tanggal</span><span class="confirm-value">${esc(voiceTransaction.date)}</span></div>
-            <div class="confirm-item"><span class="confirm-label">Keterangan</span><span class="confirm-value">${esc(voiceTransaction.description || '-')}</span></div>
+            <div class="confirm-item"><span class="confirm-label">${isEn ? 'Type' : 'Jenis'}</span><span class="confirm-value">${typeText}</span></div>
+            <div class="confirm-item"><span class="confirm-label">${isEn ? 'Amount' : 'Nominal'}</span><span class="confirm-value">Rp ${voiceTransaction.amount.toLocaleString('id-ID')}</span></div>
+            <div class="confirm-item"><span class="confirm-label">${isEn ? 'Category' : 'Kategori'}</span><span class="confirm-value" style="display:inline-flex;align-items:center;">${catBadge} ${esc(voiceTransaction.category)}</span></div>
+            <div class="confirm-item"><span class="confirm-label">${isEn ? 'Date' : 'Tanggal'}</span><span class="confirm-value">${esc(voiceTransaction.date)}</span></div>
+            <div class="confirm-item"><span class="confirm-label">${isEn ? 'Notes' : 'Keterangan'}</span><span class="confirm-value">${esc(voiceTransaction.description || '-')}</span></div>
         `;
     }
     modal.classList.add('active');
@@ -439,8 +590,10 @@ function saveVoiceTransaction() {
         });
 
         localStorage.setItem('transactions', JSON.stringify(txns));
+        const lang = localStorage.getItem('voiceLang') || currentLang || 'id-ID';
+        const isEn = lang.startsWith('en');
         closeConfirmModal();
-        showVoiceSuccess(`${savedCount} transaksi berhasil disimpan sekaligus!`);
+        showVoiceSuccess(isEn ? `${savedCount} transactions saved successfully!` : `${savedCount} transaksi berhasil disimpan sekaligus!`);
 
         if (window.renderSavingsUI) window.renderSavingsUI();
         if (window.updateDashboards) {
@@ -502,8 +655,13 @@ function _executeSavingTransaction(txn, silent = false) {
     }
 
     if (!silent) {
+        const lang = localStorage.getItem('voiceLang') || currentLang || 'id-ID';
+        const isEn = lang.startsWith('en');
         closeConfirmModal();
-        showVoiceSuccess('Tabungan berhasil ' + (txn.action === 'deposit' ? 'ditambahkan' : 'ditarik') + '.');
+        const successMsg = isEn 
+            ? ('Savings ' + (txn.action === 'deposit' ? 'deposited' : 'withdrawn') + ' successfully.')
+            : ('Tabungan berhasil ' + (txn.action === 'deposit' ? 'ditambahkan' : 'ditarik') + '.');
+        showVoiceSuccess(successMsg);
         if (window.renderSavingsUI) window.renderSavingsUI();
         if (window.updateDashboards) window.updateDashboards();
     }
@@ -524,8 +682,10 @@ function _executeNormalTransaction(txn) {
     txns.unshift(finalTxn);
     localStorage.setItem('transactions', JSON.stringify(txns));
 
+    const lang = localStorage.getItem('voiceLang') || currentLang || 'id-ID';
+    const isEn = lang.startsWith('en');
     closeConfirmModal();
-    showVoiceSuccess('Transaksi berhasil disimpan.');
+    showVoiceSuccess(isEn ? 'Transaction successfully saved.' : 'Transaksi berhasil disimpan.');
 
     if (window.updateDashboards) {
         window.transactions = txns;
@@ -547,31 +707,47 @@ function showVoiceSuccess(msg) {
     }
 }
 
-// ========== SUGGESTIONS ==========
+// ========== SUGGESTIONS & BADGE SYNC ==========
 function updateVoiceSuggestions() {
+    const lang = localStorage.getItem('voiceLang') || window.currentLang || 'id-ID';
+    const isEn = lang.startsWith('en');
+
+    // Keep recognition language synchronized
+    if (window.recognition) {
+        window.recognition.lang = lang;
+    }
+
+    // Sync UI badge display
+    const badge = document.getElementById('voiceLangDisplay');
+    if (badge) {
+        badge.textContent = isEn ? 'Mode: English (US)' : 'Mode: Bahasa Indonesia';
+    }
+
+    const status = document.getElementById('voiceStatus');
+    if (status && !isListening) {
+        status.textContent = isEn ? 'Tap to start' : 'Tap untuk mulai';
+    }
+
     const container = document.getElementById('voiceSuggestions');
     if (!container) return;
 
-    const lang = localStorage.getItem('voiceLang') || window.currentLang || 'id-ID';
-    const status = document.getElementById('voiceStatus');
-    if (status && !isListening) {
-        status.textContent = lang === 'en-US' ? 'Tap to start' : 'Tap untuk mulai';
-    }
-
-    if (lang === 'en-US') {
+    if (isEn) {
         container.innerHTML = `
-            <span class="voice-suggestion" data-text="I buy coffee twenty thousand">▸ "Buy coffee 20k"</span>
-            <span class="voice-suggestion" data-text="Buy coffee 20k then lunch 45k">▸ "Coffee 20k then lunch 45k"</span>
-            <span class="voice-suggestion" data-text="Got three hundred k freelance">▸ "Got 300k freelance"</span>
-            <span class="voice-suggestion" data-text="Nabung 50 ribu">▸ "Nabung 50k"</span>
+            <span class="voice-suggestion" data-text="Bought coffee 20k and burger 45k">▸ "Coffee 20k and burger 45k"</span>
+            <span class="voice-suggestion" data-text="Bought gas 50k and got 300k freelance">▸ "Gas 50k and got 300k freelance"</span>
+            <span class="voice-suggestion" data-text="Lunch 25k then save 50k for Japan">▸ "Lunch 25k then save 50k for Japan"</span>
+            <span class="voice-suggestion" data-text="Dinner 30k discount 5k">▸ "Dinner 30k discount 5k"</span>
+            <span class="voice-suggestion" data-text="Half a million salary">▸ "Half a million salary"</span>
+            <span class="voice-suggestion" data-text="Withdraw 20k from emergency fund">▸ "Withdraw 20k from emergency fund"</span>
         `;
     } else {
         container.innerHTML = `
-            <span class="voice-suggestion" data-text="Beli makan 25 ribu">▸ "Beli makan 25rb"</span>
-            <span class="voice-suggestion" data-text="Beli kopi 20 ribu terus naik ojol 15 ribu">▸ "Kopi 20rb terus ojol 15rb"</span>
-            <span class="voice-suggestion" data-text="Terima gaji 3 juta">▸ "Terima gaji 3jt"</span>
-            <span class="voice-suggestion" data-text="Nabung 50 ribu ke jepang">▸ "Nabung ke Jepang"</span>
-            <span class="voice-suggestion" data-text="Nabung 20 ribu">▸ "Nabung 20rb umum"</span>
+            <span class="voice-suggestion" data-text="aku habis beli kopi 20 ribu dan nasi goreng 25 ribu">▸ "Kopi 20rb dan nasi 25rb"</span>
+            <span class="voice-suggestion" data-text="habis beli bensin 50 ribu terus dapat freelance 300 ribu">▸ "Bensin 50rb terus freelance 300rb"</span>
+            <span class="voice-suggestion" data-text="makan siang 25 ribu terus nabung 50 ribu ke Jepang">▸ "Makan 25rb terus nabung 50rb"</span>
+            <span class="voice-suggestion" data-text="terima gaji satu setengah juta">▸ "Terima gaji 1.5jt"</span>
+            <span class="voice-suggestion" data-text="makan 30 ribu diskon 5 ribu">▸ "Makan 30rb diskon 5rb"</span>
+            <span class="voice-suggestion" data-text="reimburse kantor 150 ribu">▸ "Reimburse kantor 150rb"</span>
         `;
     }
 

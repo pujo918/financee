@@ -157,16 +157,32 @@
 
         <!-- Voice Input -->
         <div class="voice-section">
+            <div class="voice-ambient-waves" aria-hidden="true">
+                <svg viewBox="0 0 600 120" preserveAspectRatio="none">
+                    <path d="M0,60 C150,20 200,100 350,55 C450,20 520,80 600,60" fill="none" stroke="currentColor" stroke-width="1.8" />
+                    <path d="M0,60 C100,85 240,25 360,70 C460,100 540,40 600,60" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 4" />
+                </svg>
+            </div>
             <div class="voice-language-badge">
                 <svg class="ui-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 <span id="voiceLangDisplay">English + Indonesian</span>
             </div>
             <h2 style="margin-bottom: 10px; display:flex; align-items:center; justify-content:center; gap:8px;">Voice Input</h2>
             <p style="margin-bottom: 20px; opacity: 0.9; font-size: 0.95rem;">
-                Speak naturally — full description captured!
+                Speak naturally - full description captured!
             </p>
-            <button class="voice-button" id="voiceButton">
+            <button class="voice-button" id="voiceButton" aria-label="Aktifkan Input Suara">
                 <img src="" alt="Theme Avatar" class="voice-avatar" id="voiceAvatar" />
+                <div class="voice-original-symbol" id="voiceOriginalSymbol" aria-hidden="true">
+                    <span class="v-pulse-ring ring-1"></span>
+                    <span class="v-pulse-ring ring-2"></span>
+                    <svg class="voice-mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" y1="19" x2="12" y2="22"/>
+                        <line x1="8" y1="22" x2="16" y2="22"/>
+                    </svg>
+                </div>
             </button>
             <div class="voice-status" id="voiceStatus">Tap to start</div>
             <div class="voice-result" id="voiceResult"></div>
@@ -358,21 +374,28 @@
                 <!-- Automatic Calculator & Priority Tier Summary Card -->
                 <div id="budgetSummaryCard"></div>
 
-                <!-- Clean 2-Row Item Builder Card -->
-                <div class="budget-builder-card">
-                    <div class="budget-builder-header">
+                <!-- Clean 2-Row Item Builder Card (Collapsible) -->
+                <div class="budget-builder-card collapsed" id="budgetBuilderCard">
+                    <div class="budget-builder-header" onclick="toggleBudgetBuilder()" style="cursor:pointer;" title="Klik untuk buka / tutup form tambah item">
                         <div class="budget-builder-title" id="budgetBuilderFormTitle">
                             <span class="cat-icon-badge cat-icon-badge--bills" style="width:24px;height:24px;">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="12"/></svg>
                             </span>
                             <span>Tambah Item Kebutuhan / Langganan</span>
                         </div>
-                        <button type="button" id="budgetCancelEditBtn" class="preset-mini-btn" style="display:none;color:var(--danger);border-color:var(--danger);" onclick="cancelEditBudgetItem()">
-                            ✕ Batal Edit
-                        </button>
+                        <div class="budget-builder-header-actions">
+                            <button type="button" id="budgetCancelEditBtn" class="preset-mini-btn" style="display:none;color:var(--danger);border-color:var(--danger);" onclick="event.stopPropagation(); cancelEditBudgetItem()">
+                                ✕ Batal Edit
+                            </button>
+                            <button type="button" class="budget-builder-toggle-pill" id="budgetBuilderToggleBtn">
+                                <span class="toggle-text">+ Buka Form</span>
+                                <svg class="toggle-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                        </div>
                     </div>
 
-                    <input type="hidden" id="editingBudgetItemId" value="">
+                    <div class="budget-builder-body" id="budgetBuilderBody">
+                        <input type="hidden" id="editingBudgetItemId" value="">
 
                     <div class="budget-form-grid-top">
                         <div class="budget-field">
@@ -438,8 +461,9 @@
                         <button type="button" class="preset-mini-btn" onclick="quickAddBudgetPreset('Belanja / Wishlist', 'shopping', 3, 'quota', 300000, 'monthly')">+ Belanja</button>
                     </div>
                 </div>
+            </div>
 
-                <!-- Active Budget Categories & Their Clean Line Items -->
+            <!-- Active Budget Categories & Their Clean Line Items -->
                 <div id="budgetForm" class="budget-categories-grid"></div>
             </div>
         </div>

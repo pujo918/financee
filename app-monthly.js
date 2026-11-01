@@ -1498,12 +1498,38 @@ function handleAddCustomBudgetItem() {
 
     syncBudgetsFromLineItems(items);
     renderBudgetForm();
+    toggleBudgetBuilder(false);
+}
+
+function toggleBudgetBuilder(forceExpand) {
+    const card = document.getElementById('budgetBuilderCard');
+    const toggleBtn = document.getElementById('budgetBuilderToggleBtn');
+    if (!card) return;
+
+    const isCollapsed = card.classList.contains('collapsed');
+    const shouldExpand = forceExpand !== undefined ? forceExpand : isCollapsed;
+
+    if (shouldExpand) {
+        card.classList.remove('collapsed');
+        if (toggleBtn) {
+            const textSpan = toggleBtn.querySelector('.toggle-text');
+            if (textSpan) textSpan.textContent = '− Tutup Form';
+        }
+    } else {
+        card.classList.add('collapsed');
+        if (toggleBtn) {
+            const textSpan = toggleBtn.querySelector('.toggle-text');
+            if (textSpan) textSpan.textContent = '+ Buka Form';
+        }
+    }
 }
 
 function editBudgetItemInForm(itemId) {
     const items = getBudgetLineItems();
     const item = items.find(i => i.id === itemId);
     if (!item) return;
+
+    toggleBudgetBuilder(true);
 
     const editIdEl = document.getElementById('editingBudgetItemId');
     const nameEl = document.getElementById('newBudgetItemName');
@@ -1552,6 +1578,7 @@ function cancelEditBudgetItem() {
             <span>Tambah Item Kebutuhan / Langganan</span>
         `;
     }
+    toggleBudgetBuilder(false);
 }
 
 function cycleBudgetItemTier(itemId) {
@@ -1682,8 +1709,10 @@ function renderBudgetForm() {
                         <div class="budget-clean-item-amount">
                             Rp ${itemMonthly.toLocaleString('id-ID')}<span style="font-size:0.7rem;font-weight:600;color:var(--text-secondary);">/bln</span>
                         </div>
-                        <button type="button" class="item-action-btn" onclick="editBudgetItemInForm(${item.id})" title="Edit item ini">✎</button>
-                        <button type="button" class="item-action-btn del" onclick="removeBudgetLineItem(${item.id})" title="Hapus item ini">✕</button>
+                        <div class="budget-clean-item-actions">
+                            <button type="button" class="item-action-btn" onclick="editBudgetItemInForm(${item.id})" title="Edit item ini">✎</button>
+                            <button type="button" class="item-action-btn del" onclick="removeBudgetLineItem(${item.id})" title="Hapus item ini">✕</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1693,22 +1722,22 @@ function renderBudgetForm() {
         <div class="budget-category-card">
             <div>
                 <div class="budget-cat-header">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <span style="display:inline-flex;align-items:center;font-weight:700;font-size:0.98rem;color:var(--text-primary);">
+                    <div class="budget-cat-title-wrap">
+                        <span class="budget-cat-title-badge">
                             ${getCategoryBadge(cat)} <span>${formatCategoryName(cat)}</span>
                         </span>
-                        <span style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);background:var(--bg-card);padding:2px 8px;border-radius:999px;border:1px solid var(--border);">
+                        <span class="budget-cat-count-pill">
                             ${catItems.length} item
                         </span>
                     </div>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <span id="budget-${cat}-monthly-eq" style="font-size:0.95rem;font-weight:800;color:var(--accent-primary);">
-                            Rp ${monthlyAmt.toLocaleString('id-ID')}<span style="font-size:0.74rem;font-weight:600;color:var(--text-secondary);">/bln</span>
+                    <div class="budget-cat-amount-wrap">
+                        <span id="budget-${cat}-monthly-eq" class="budget-cat-monthly-val">
+                            Rp ${monthlyAmt.toLocaleString('id-ID')}<span class="budget-cat-monthly-sub">/bln</span>
                         </span>
                         <button type="button" class="item-action-btn del" onclick="removeCategoryFromBudget('${cat}')" title="Hapus seluruh pos ${formatCategoryName(cat)}">✕</button>
                     </div>
                 </div>
-                <div id="budget-${cat}-status" style="margin-bottom: 4px; font-size: 0.84rem;"></div>
+                <div id="budget-${cat}-status" style="margin-bottom: 6px;"></div>
                 <div class="budget-items-list">
                     ${rowsHtml}
                 </div>
@@ -1785,9 +1814,14 @@ function updateBudgetStatus() {
                 statusIcon = '▲';
             }
             el.innerHTML = `
-                <div style="display:flex;justify-content:space-between;align-items:center;color:${color};font-weight:600;font-size:0.84rem;">
-                    <span>${statusIcon} Realisasi Transaksi: ${pctStr}% terpakai (Rp ${spent.toLocaleString('id-ID')})</span>
-                    <span>${remText}</span>
+                <div class="budget-cat-status-row">
+                    <div class="budget-status-spent-col">
+                        <span class="budget-status-dot" style="color:${color};">${statusIcon}</span>
+                        <span>Terpakai: <strong style="color:var(--text-primary);">${pctStr}%</strong> <span style="opacity:0.85;font-size:0.78rem;">(Rp ${spent.toLocaleString('id-ID')})</span></span>
+                    </div>
+                    <div class="budget-status-rem-col" style="color:${color};">
+                        ${remText}
+                    </div>
                 </div>
                 <div class="budget-progress-track">
                     <div class="budget-progress-fill" style="width:${barWidth}%;background:${color};"></div>
@@ -1868,21 +1902,32 @@ function updateBudgetStatus() {
 // ========== HELPERS ==========
 function showDailyQuote() {
     const imageTheme = localStorage.getItem('theme') || 'naruto';
-    const quotes = imageTheme === 'onepiece'
-        ? [
+    let quotes;
+    if (imageTheme === 'original') {
+        quotes = [
+            "Disiplin finansial hari ini adalah kemerdekaan finansial di masa depan.",
+            "Ukur setiap pengeluaran, bangun masa depan dengan rencana nyata.",
+            "Bukan seberapa banyak yang kamu hasilkan, tapi seberapa bijak kamu mengelolanya.",
+            "Tabungan kecil yang konsisten akan menciptakan fondasi hidup yang kokoh.",
+            "Kebebasan finansial dimulai dari kendali penuh atas kebutuhanmu."
+        ];
+    } else if (imageTheme === 'onepiece') {
+        quotes = [
             "Set sail, track every berry!",
             "Build your treasure, one step at a time!",
             "Navigate your budget like a captain!",
             "Keep your crew budget battle-ready!",
             "Grand goals start from daily discipline!"
-        ]
-        : [
+        ];
+    } else {
+        quotes = [
             "Track smart, spend wise!",
             "Monthly reflection helps growth!",
             "Financial awareness = Freedom!",
             "You're doing great!",
             "Small steps, big savings!"
         ];
+    }
     document.getElementById('dailyQuote').textContent = `"${quotes[Math.floor(Math.random() * quotes.length)]}"`;
 }
 
@@ -1914,3 +1959,4 @@ window.addBlankItemToCategory = addBlankItemToCategory;
 window.updateBudgetLineItemField = updateBudgetLineItemField;
 window.toggleSubscriptionPaid = toggleSubscriptionPaid;
 window.removeBudgetLineItem = removeBudgetLineItem;
+window.toggleBudgetBuilder = toggleBudgetBuilder;

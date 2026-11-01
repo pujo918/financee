@@ -404,8 +404,10 @@ function renderPlannerLineItems() {
                     <div class="budget-clean-item-amount">
                         ${fmt(monthlyEq)}<span style="font-size:0.7rem;font-weight:600;color:var(--text-secondary);">/bln</span>
                     </div>
-                    <button type="button" class="item-action-btn" onclick="plannerEditItem(${item.id})" title="Edit item">✎</button>
-                    <button type="button" class="item-action-btn del" onclick="plannerRemoveItem(${item.id})" title="Hapus">✕</button>
+                    <div class="budget-clean-item-actions">
+                        <button type="button" class="item-action-btn" onclick="plannerEditItem(${item.id})" title="Edit item">✎</button>
+                        <button type="button" class="item-action-btn del" onclick="plannerRemoveItem(${item.id})" title="Hapus">✕</button>
+                    </div>
                 </div>
             </div>
         `;
