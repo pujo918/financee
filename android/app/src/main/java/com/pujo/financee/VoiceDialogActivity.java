@@ -357,13 +357,24 @@ public class VoiceDialogActivity extends Activity {
         String lower = input.toLowerCase();
 
         // 1. Determine Type & Category
-        if (lower.contains("gaji") || lower.contains("salary") || lower.contains("bonus") ||
-            lower.contains("pemasukan") || lower.contains("transferan") || lower.contains("kiriman") ||
-            lower.contains("dapat uang") || lower.contains("terima uang") || lower.contains("komisi") ||
-            lower.contains("cair") || lower.contains("thr") || lower.contains("angpao")) {
+        boolean isIncome = lower.contains("ditransfer") ||
+                           lower.contains("dapat transfer") ||
+                           lower.contains("terima transfer") ||
+                           lower.contains("transfer masuk") ||
+                           (lower.contains("transfer") && !lower.contains("transfer ke") && !lower.contains("transfer buat") && !lower.contains("transfer untuk")) ||
+                           lower.contains("gaji") || lower.contains("gajian") || lower.contains("salary") ||
+                           lower.contains("bonus") || lower.contains("pemasukan") || lower.contains("pendapatan") ||
+                           lower.contains("dikirimi") || lower.contains("dikirimin") || lower.contains("kiriman") ||
+                           lower.contains("dapat uang") || lower.contains("dapet uang") || lower.contains("dikasih uang") ||
+                           lower.contains("dikasih") || lower.contains("terima uang") || lower.contains("uang masuk") ||
+                           lower.contains("komisi") || lower.contains("cair") || lower.contains("thr") ||
+                           lower.contains("angpao") || lower.contains("cashback") || lower.contains("refund") ||
+                           lower.contains("upah") || lower.contains("honor");
+
+        if (isIncome) {
             currentType = "income";
             currentCategory = "salary";
-            currentCategoryLabel = "Gaji / Pemasukan";
+            currentCategoryLabel = "Pemasukan";
         } else {
             currentType = "expense";
 

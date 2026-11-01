@@ -503,7 +503,17 @@ function updateMonthlyDashboard() {
         let lastTx = (typeof transactions !== 'undefined' && transactions && transactions.length > 0) ? transactions[0] : null;
         let lastDesc = lastTx ? (lastTx.description || 'Transaksi baru') : 'Ketuk mic untuk bicara';
         let lastNom = lastTx ? `Rp ${Number(lastTx.amount || 0).toLocaleString('id-ID')}` : 'Rp 0';
-        let lastCat = lastTx ? (lastTx.category ? lastTx.category.charAt(0).toUpperCase() + lastTx.category.slice(1) : 'Makanan') : 'Makanan';
+        const catMap = {
+            'food': 'Makanan',
+            'transport': 'Transport',
+            'bills': 'Tagihan',
+            'shopping': 'Belanja',
+            'entertainment': 'Hiburan',
+            'salary': 'Pemasukan',
+            'education': 'Pendidikan',
+            'health': 'Kesehatan'
+        };
+        let lastCat = lastTx ? (catMap[lastTx.category] || (lastTx.category ? lastTx.category.charAt(0).toUpperCase() + lastTx.category.slice(1) : 'Makanan')) : 'Makanan';
         let lastTyp = lastTx ? (lastTx.type === 'income' ? 'Pemasukan' : 'Pengeluaran') : 'Pengeluaran';
 
         if (typeof window.AndroidWidget.updateWidgetFull === 'function') {

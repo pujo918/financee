@@ -37,6 +37,9 @@ public class FinanceVoiceWidgetProvider extends AppWidgetProvider {
                 views.setViewVisibility(R.id.widgetLargeBgNaruto, View.VISIBLE);
                 views.setViewVisibility(R.id.widgetLargeBgOnePiece, View.GONE);
 
+                views.setViewVisibility(R.id.widgetLargeArtNaruto, View.VISIBLE);
+                views.setViewVisibility(R.id.widgetLargeArtOnePiece, View.GONE);
+
                 views.setViewVisibility(R.id.widgetAvatarNaruto, View.VISIBLE);
                 views.setViewVisibility(R.id.widgetAvatarLuffy, View.GONE);
 
@@ -49,6 +52,9 @@ public class FinanceVoiceWidgetProvider extends AppWidgetProvider {
                 // One Piece Theme Active (Default)
                 views.setViewVisibility(R.id.widgetLargeBgOnePiece, View.VISIBLE);
                 views.setViewVisibility(R.id.widgetLargeBgNaruto, View.GONE);
+
+                views.setViewVisibility(R.id.widgetLargeArtOnePiece, View.VISIBLE);
+                views.setViewVisibility(R.id.widgetLargeArtNaruto, View.GONE);
 
                 views.setViewVisibility(R.id.widgetAvatarLuffy, View.VISIBLE);
                 views.setViewVisibility(R.id.widgetAvatarNaruto, View.GONE);

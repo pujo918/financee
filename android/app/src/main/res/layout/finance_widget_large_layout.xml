@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Theme Background 1: One Piece Ocean Navy -->
+    <!-- ================= LAYER 0: CARD GRADIENT & BORDER ================= -->
     <ImageView
         android:id="@+id/widgetLargeBgOnePiece"
         android:layout_width="match_parent"
@@ -12,7 +12,6 @@
         android:background="@drawable/widget_bg_onepiece"
         android:contentDescription="One Piece Background" />
 
-    <!-- Theme Background 2: Naruto Fiery Slate -->
     <ImageView
         android:id="@+id/widgetLargeBgNaruto"
         android:layout_width="match_parent"
@@ -21,14 +20,39 @@
         android:visibility="gone"
         android:contentDescription="Naruto Background" />
 
-    <!-- Foreground Content -->
+    <!-- ================= LAYER 1: WATERMARK THEME ARTWORK ================= -->
+    <ImageView
+        android:id="@+id/widgetLargeArtOnePiece"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="end|bottom"
+        android:src="@drawable/widget_art_onepiece"
+        android:scaleType="fitEnd"
+        android:alpha="0.26"
+        android:contentDescription="One Piece Watermark" />
+
+    <ImageView
+        android:id="@+id/widgetLargeArtNaruto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="end|bottom"
+        android:src="@drawable/widget_art_naruto"
+        android:scaleType="fitEnd"
+        android:alpha="0.26"
+        android:visibility="gone"
+        android:contentDescription="Naruto Watermark" />
+
+    <!-- ================= LAYER 2: INTERACTIVE UI CONTENT ================= -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="11dp"
+        android:paddingBottom="11dp">
 
-        <!-- Top Bar: Prominent Character Avatar, Title, & Theme Badge -->
+        <!-- Header: Avatar, App Title, Theme Badge & Date -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -36,15 +60,15 @@
             android:gravity="center_vertical"
             android:paddingBottom="6dp">
 
-            <!-- Avatar Frame -->
+            <!-- Avatar Container -->
             <FrameLayout
                 android:layout_width="42dp"
                 android:layout_height="42dp">
 
                 <ImageView
                     android:id="@+id/widgetAvatarLuffy"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
                     android:background="@drawable/widget_avatar_bg_onepiece"
                     android:padding="2dp"
                     android:src="@drawable/avatar_luffy"
@@ -53,12 +77,12 @@
 
                 <ImageView
                     android:id="@+id/widgetAvatarNaruto"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
                     android:background="@drawable/widget_avatar_bg_naruto"
                     android:padding="2dp"
                     android:src="@drawable/avatar_naruto"
-                    android:scaleType="centerCrop"
+                    android:scaleType="fitCenter"
                     android:visibility="gone"
                     android:contentDescription="Avatar Naruto" />
             </FrameLayout>
@@ -74,19 +98,19 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Catatan Keuangan"
-                    android:textColor="#f8fafc"
-                    android:textSize="13sp"
+                    android:textColor="#ffffff"
+                    android:textSize="13.5sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Ketuk &amp; Bicara"
+                    android:text="Ketuk Mic &amp; Bicara"
                     android:textColor="#94a3b8"
                     android:textSize="10.5sp" />
             </LinearLayout>
 
-            <!-- Theme Badge Indicator -->
+            <!-- Theme Badge -->
             <FrameLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content">
@@ -96,13 +120,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/widget_badge_onepiece"
-                    android:paddingStart="7dp"
-                    android:paddingEnd="7dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
                     android:paddingTop="3dp"
                     android:paddingBottom="3dp"
                     android:text="ONE PIECE"
                     android:textColor="#38bdf8"
-                    android:textSize="9.5sp"
+                    android:textSize="10sp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -110,32 +134,34 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/widget_badge_naruto"
-                    android:paddingStart="7dp"
-                    android:paddingEnd="7dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
                     android:paddingTop="3dp"
                     android:paddingBottom="3dp"
                     android:text="NARUTO"
                     android:textColor="#f97316"
-                    android:textSize="9.5sp"
+                    android:textSize="10sp"
                     android:textStyle="bold"
                     android:visibility="gone" />
             </FrameLayout>
         </LinearLayout>
 
-        <!-- Main Body: 2 Columns -->
+        <!-- Main Body: 2 Columns with Optimized Space Utilization -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="2dp">
 
-            <!-- Column 1: Mic Button with Soundwaves & Quoted Transcript -->
+            <!-- Column 1: Voice Button & Audio Feedback Wave -->
             <LinearLayout
                 android:id="@+id/widgetLargeMicButton"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
+                android:layout_weight="1.05"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:clickable="true"
@@ -155,17 +181,17 @@
                         android:contentDescription="Soundwave Left" />
 
                     <FrameLayout
-                        android:layout_width="46dp"
-                        android:layout_height="46dp"
-                        android:layout_marginStart="6dp"
-                        android:layout_marginEnd="6dp">
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:layout_marginStart="7dp"
+                        android:layout_marginEnd="7dp">
 
                         <ImageView
                             android:id="@+id/widgetLargeMicGlowCyan"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:background="@drawable/widget_glow_mic_cyan"
-                            android:padding="12dp"
+                            android:padding="13dp"
                             android:src="@drawable/ic_mic_widget"
                             android:contentDescription="Mic Cyan" />
 
@@ -174,7 +200,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:background="@drawable/widget_glow_mic_orange"
-                            android:padding="12dp"
+                            android:padding="13dp"
                             android:src="@drawable/ic_mic_widget"
                             android:visibility="gone"
                             android:contentDescription="Mic Orange" />
@@ -187,17 +213,17 @@
                         android:contentDescription="Soundwave Right" />
                 </LinearLayout>
 
-                <!-- Quoted Transcript text -->
+                <!-- Quoted Transcript Text -->
                 <TextView
                     android:id="@+id/widgetLargeTranscriptText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="5dp"
+                    android:layout_marginTop="6dp"
                     android:gravity="center"
                     android:maxLines="2"
                     android:text="&quot;Ketuk mic untuk bicara&quot;"
-                    android:textColor="#cbd5e1"
-                    android:textSize="10.5sp"
+                    android:textColor="#e2e8f0"
+                    android:textSize="11sp"
                     android:textStyle="italic" />
             </LinearLayout>
 
@@ -205,28 +231,28 @@
             <ImageView
                 android:layout_width="1dp"
                 android:layout_height="match_parent"
-                android:layout_marginStart="6dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="10dp"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="4dp"
-                android:background="#27354f"
+                android:background="#334155"
                 android:contentDescription="Divider" />
 
-            <!-- Column 2: Nominal, Category, Type & Action Buttons -->
+            <!-- Column 2: Transaction Details & Action Buttons -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1.25"
+                android:layout_weight="1.3"
                 android:orientation="vertical"
                 android:gravity="center_vertical">
 
-                <!-- Nominal -->
+                <!-- Nominal Header Row -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Nominal"
+                    android:text="Nominal Transaksi"
                     android:textColor="#94a3b8"
-                    android:textSize="9.5sp" />
+                    android:textSize="10sp" />
 
                 <TextView
                     android:id="@+id/widgetLargeNominalText"
@@ -235,15 +261,15 @@
                     android:maxLines="1"
                     android:text="Rp 0"
                     android:textColor="#34d399"
-                    android:textSize="17.5sp"
+                    android:textSize="18.5sp"
                     android:textStyle="bold" />
 
-                <!-- Category & Type -->
+                <!-- Category & Type in Structured Row -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="3dp">
+                    android:layout_marginTop="4dp">
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -256,7 +282,7 @@
                             android:layout_height="wrap_content"
                             android:text="Kategori"
                             android:textColor="#94a3b8"
-                            android:textSize="9sp" />
+                            android:textSize="9.5sp" />
 
                         <TextView
                             android:id="@+id/widgetLargeCategoryText"
@@ -264,8 +290,8 @@
                             android:layout_height="wrap_content"
                             android:maxLines="1"
                             android:text="Makanan"
-                            android:textColor="#f1f5f9"
-                            android:textSize="10.5sp"
+                            android:textColor="#f8fafc"
+                            android:textSize="11sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
@@ -280,7 +306,7 @@
                             android:layout_height="wrap_content"
                             android:text="Tipe"
                             android:textColor="#94a3b8"
-                            android:textSize="9sp" />
+                            android:textSize="9.5sp" />
 
                         <TextView
                             android:id="@+id/widgetLargeTypeText"
@@ -289,17 +315,17 @@
                             android:maxLines="1"
                             android:text="Pengeluaran"
                             android:textColor="#f87171"
-                            android:textSize="10.5sp"
+                            android:textSize="11sp"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- Buttons: [Edit] and [Simpan] -->
+                <!-- Action Buttons: [Edit] and [Simpan] -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="6dp">
+                    android:layout_marginTop="8dp">
 
                     <LinearLayout
                         android:id="@+id/widgetLargeEditButton"
@@ -309,24 +335,24 @@
                         android:orientation="horizontal"
                         android:gravity="center"
                         android:background="@drawable/widget_btn_edit"
-                        android:paddingTop="5dp"
-                        android:paddingBottom="5dp"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
                         android:clickable="true"
                         android:focusable="true">
 
                         <ImageView
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
+                            android:layout_width="11dp"
+                            android:layout_height="11dp"
                             android:src="@drawable/ic_edit_small"
                             android:contentDescription="Edit" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="3dp"
+                            android:layout_marginStart="4dp"
                             android:text="Edit"
                             android:textColor="#cbd5e1"
-                            android:textSize="10sp"
+                            android:textSize="10.5sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
@@ -334,29 +360,29 @@
                         android:id="@+id/widgetLargeSaveButton"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1.2"
+                        android:layout_weight="1.25"
                         android:layout_marginStart="6dp"
                         android:orientation="horizontal"
                         android:gravity="center"
                         android:background="@drawable/widget_btn_save"
-                        android:paddingTop="5dp"
-                        android:paddingBottom="5dp"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
                         android:clickable="true"
                         android:focusable="true">
 
                         <ImageView
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
+                            android:layout_width="11dp"
+                            android:layout_height="11dp"
                             android:src="@drawable/ic_check_small"
                             android:contentDescription="Simpan" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="3dp"
+                            android:layout_marginStart="4dp"
                             android:text="Simpan"
                             android:textColor="#ffffff"
-                            android:textSize="10sp"
+                            android:textSize="10.5sp"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
