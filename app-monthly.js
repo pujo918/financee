@@ -19,8 +19,40 @@ let currentView = 'monthly'; // 'monthly' or 'alltime'
 let selectedMonth = new Date().getMonth();
 let selectedYear = new Date().getFullYear();
 
+window.syncPendingTransactionsFromWidget = function() {
+    if (!window.AndroidWidget || typeof window.AndroidWidget.getPendingTransactions !== 'function') return;
+    try {
+        const raw = window.AndroidWidget.getPendingTransactions();
+        if (!raw || raw === '[]') return;
+        const pending = JSON.parse(raw);
+        if (Array.isArray(pending) && pending.length > 0) {
+            let existing = JSON.parse(localStorage.getItem('transactions')) || [];
+            let added = 0;
+            pending.forEach(p => {
+                if (!existing.some(t => t.id === p.id)) {
+                    existing.unshift(p);
+                    added++;
+                }
+            });
+            if (added > 0) {
+                transactions = existing;
+                saveTransactions();
+                updateDashboards();
+                renderTransactions();
+                updateBudgetStatus();
+            }
+            if (typeof window.AndroidWidget.clearPendingTransactions === 'function') {
+                window.AndroidWidget.clearPendingTransactions();
+            }
+        }
+    } catch (e) {
+        console.error('Failed to sync widget transactions:', e);
+    }
+};
+
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', function() {
+    window.syncPendingTransactionsFromWidget();
     setTodayDate();
     renderCategoryPicker();
     populateCategoryFilterDropdown();
@@ -462,11 +494,23 @@ function updateMonthlyDashboard() {
     if (monthlySavingRateEl) monthlySavingRateEl.textContent = `${savingRate.toFixed(1)}%`;
 
     // Sync with Android Home Screen Widget if running inside APK
-    if (window.AndroidWidget && typeof window.AndroidWidget.updateWidget === 'function') {
+    if (window.AndroidWidget) {
         const balStr = (net >= 0 ? 'Rp ' : '-Rp ') + Math.abs(net).toLocaleString('id-ID');
         const incStr = '+Rp ' + income.toLocaleString('id-ID');
         const expStr = '-Rp ' + expense.toLocaleString('id-ID');
-        window.AndroidWidget.updateWidget(balStr, incStr, expStr);
+        const currentTheme = localStorage.getItem('theme') || 'onepiece';
+
+        let lastTx = (typeof transactions !== 'undefined' && transactions && transactions.length > 0) ? transactions[0] : null;
+        let lastDesc = lastTx ? (lastTx.description || 'Transaksi baru') : 'Ketuk mic untuk bicara';
+        let lastNom = lastTx ? `Rp ${Number(lastTx.amount || 0).toLocaleString('id-ID')}` : 'Rp 0';
+        let lastCat = lastTx ? (lastTx.category ? lastTx.category.charAt(0).toUpperCase() + lastTx.category.slice(1) : 'Makanan') : 'Makanan';
+        let lastTyp = lastTx ? (lastTx.type === 'income' ? 'Pemasukan' : 'Pengeluaran') : 'Pengeluaran';
+
+        if (typeof window.AndroidWidget.updateWidgetFull === 'function') {
+            window.AndroidWidget.updateWidgetFull(balStr, incStr, expStr, currentTheme, lastDesc, lastNom, lastCat, lastTyp);
+        } else if (typeof window.AndroidWidget.updateWidget === 'function') {
+            window.AndroidWidget.updateWidget(balStr, incStr, expStr);
+        }
     }
 
     const indicator = document.getElementById('monthlyHealthIndicator');

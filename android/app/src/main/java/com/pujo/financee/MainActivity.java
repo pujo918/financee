@@ -34,6 +34,7 @@ public class MainActivity extends BridgeActivity {
     public void onResume() {
         super.onResume();
         checkVoiceIntent(getIntent());
+        syncPendingWidgetTransactions();
     }
 
     @Override
@@ -41,6 +42,22 @@ public class MainActivity extends BridgeActivity {
         super.onNewIntent(intent);
         setIntent(intent);
         checkVoiceIntent(intent);
+        syncPendingWidgetTransactions();
+    }
+
+    private void syncPendingWidgetTransactions() {
+        if (bridge == null || bridge.getWebView() == null) return;
+
+        SharedPreferences prefs = getSharedPreferences("FinanceWidgetPrefs", Context.MODE_PRIVATE);
+        String pending = prefs.getString("pendingTransactions", "[]");
+        if (pending != null && !pending.equals("[]") && !pending.trim().isEmpty()) {
+            bridge.getWebView().postDelayed(() -> {
+                bridge.getWebView().evaluateJavascript(
+                    "if (typeof window.syncPendingTransactionsFromWidget === 'function') { window.syncPendingTransactionsFromWidget(); }",
+                    null
+                );
+            }, 600);
+        }
     }
 
     private void checkVoiceIntent(Intent intent) {
@@ -79,6 +96,46 @@ public class MainActivity extends BridgeActivity {
                 .apply();
 
             FinanceWidgetProvider.updateAllWidgets(context);
+            FinanceVoiceWidgetProvider.updateAllWidgets(context);
+        }
+
+        @JavascriptInterface
+        public void updateWidgetFull(String balance, String income, String expense, String theme, String lastTranscript, String lastNominal, String lastCategory, String lastType) {
+            SharedPreferences prefs = context.getSharedPreferences("FinanceWidgetPrefs", Context.MODE_PRIVATE);
+            prefs.edit()
+                .putString("monthlyBalance", balance)
+                .putString("monthlyIncome", income)
+                .putString("monthlyExpense", expense)
+                .putString("theme", theme)
+                .putString("lastTranscript", lastTranscript)
+                .putString("lastNominal", lastNominal)
+                .putString("lastCategory", lastCategory)
+                .putString("lastType", lastType)
+                .putLong("lastUpdated", System.currentTimeMillis())
+                .apply();
+
+            FinanceWidgetProvider.updateAllWidgets(context);
+            FinanceVoiceWidgetProvider.updateAllWidgets(context);
+        }
+
+        @JavascriptInterface
+        public void setTheme(String theme) {
+            SharedPreferences prefs = context.getSharedPreferences("FinanceWidgetPrefs", Context.MODE_PRIVATE);
+            prefs.edit().putString("theme", theme).apply();
+            FinanceWidgetProvider.updateAllWidgets(context);
+            FinanceVoiceWidgetProvider.updateAllWidgets(context);
+        }
+
+        @JavascriptInterface
+        public String getPendingTransactions() {
+            SharedPreferences prefs = context.getSharedPreferences("FinanceWidgetPrefs", Context.MODE_PRIVATE);
+            return prefs.getString("pendingTransactions", "[]");
+        }
+
+        @JavascriptInterface
+        public void clearPendingTransactions() {
+            SharedPreferences prefs = context.getSharedPreferences("FinanceWidgetPrefs", Context.MODE_PRIVATE);
+            prefs.edit().putString("pendingTransactions", "[]").apply();
         }
     }
 }

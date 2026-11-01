@@ -123,6 +123,12 @@
 
         document.body.classList.remove('naruto', 'onepiece', 'original');
         document.body.classList.add(theme);
+
+        try {
+            if (window.AndroidWidget && typeof window.AndroidWidget.setTheme === 'function') {
+                window.AndroidWidget.setTheme(theme);
+            }
+        } catch (e) {}
     }
 
     function setImageTheme(themeName) {

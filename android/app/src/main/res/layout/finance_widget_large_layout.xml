@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetLargeRootLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@drawable/widget_bg_4x2">
+
+    <!-- Top Bar: Avatar, Title & Subtitle -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="6dp">
+
+        <ImageView
+            android:id="@+id/widgetLargeAvatar"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:background="@drawable/widget_avatar_bg"
+            android:padding="2dp"
+            android:src="@drawable/avatar_luffy"
+            android:scaleType="centerInside"
+            android:contentDescription="Avatar" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Catatan Keuangan"
+                android:textColor="#f8fafc"
+                android:textSize="12.5sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ketuk &amp; Bicara"
+                android:textColor="#94a3b8"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/widgetLargeDateBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hari Ini"
+            android:textColor="#64748b"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Main Content Area: 2 Columns -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Column 1: Glowing Mic & Quoted Transcript -->
+        <LinearLayout
+            android:id="@+id/widgetLargeMicButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true">
+
+            <!-- Mic Circle with Soundwaves on Left/Right -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <ImageView
+                    android:id="@+id/widgetSoundwaveLeft"
+                    android:layout_width="16dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_soundwave"
+                    android:contentDescription="Soundwave" />
+
+                <ImageView
+                    android:id="@+id/widgetLargeMicGlow"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/widget_glow_mic_cyan"
+                    android:padding="11dp"
+                    android:src="@drawable/ic_mic_widget"
+                    android:contentDescription="Voice Mic Button" />
+
+                <ImageView
+                    android:id="@+id/widgetSoundwaveRight"
+                    android:layout_width="16dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_soundwave"
+                    android:contentDescription="Soundwave" />
+            </LinearLayout>
+
+            <!-- Quoted Transcript text -->
+            <TextView
+                android:id="@+id/widgetLargeTranscriptText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:gravity="center"
+                android:maxLines="2"
+                android:text="&quot;Ketuk mic untuk bicara&quot;"
+                android:textColor="#cbd5e1"
+                android:textSize="10.5sp"
+                android:textStyle="italic" />
+        </LinearLayout>
+
+        <!-- Vertical Divider line -->
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="2dp"
+            android:background="#1e293b" />
+
+        <!-- Column 2: Transaction Details & Action Buttons -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.2"
+            android:orientation="vertical"
+            android:gravity="center_vertical">
+
+            <!-- Nominal -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nominal"
+                android:textColor="#94a3b8"
+                android:textSize="9.5sp" />
+
+            <TextView
+                android:id="@+id/widgetLargeNominalText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:text="Rp 0"
+                android:textColor="#34d399"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <!-- Category & Type in Compact Rows -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="2dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Kategori"
+                        android:textColor="#94a3b8"
+                        android:textSize="9sp" />
+
+                    <TextView
+                        android:id="@+id/widgetLargeCategoryText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:maxLines="1"
+                        android:text="Makanan"
+                        android:textColor="#f1f5f9"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="end">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tipe"
+                        android:textColor="#94a3b8"
+                        android:textSize="9sp" />
+
+                    <TextView
+                        android:id="@+id/widgetLargeTypeText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:maxLines="1"
+                        android:text="Pengeluaran"
+                        android:textColor="#f87171"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Bottom Buttons: [Edit] and [Simpan] -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="6dp">
+
+                <LinearLayout
+                    android:id="@+id/widgetLargeEditButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:background="@drawable/widget_btn_edit"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:src="@drawable/ic_edit_small"
+                        android:contentDescription="Edit" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="3dp"
+                        android:text="Edit"
+                        android:textColor="#cbd5e1"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/widgetLargeSaveButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1.2"
+                    android:layout_marginStart="6dp"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:background="@drawable/widget_btn_save"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:src="@drawable/ic_check_small"
+                        android:contentDescription="Simpan" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="3dp"
+                        android:text="Simpan"
+                        android:textColor="#ffffff"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

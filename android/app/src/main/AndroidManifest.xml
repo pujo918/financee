@@ -36,10 +36,19 @@
 
         </activity>
 
-        <!-- Home Screen AppWidget Receiver -->
+        <!-- Floating Voice Input Dialog Activity -->
+        <activity
+            android:name=".VoiceDialogActivity"
+            android:label="Catatan Suara"
+            android:theme="@style/Theme.TransparentDialog"
+            android:launchMode="singleTop"
+            android:excludeFromRecents="true"
+            android:exported="true" />
+
+        <!-- Home Screen AppWidget Receiver (4x1 / 2x2 Summary) -->
         <receiver
             android:name=".FinanceWidgetProvider"
-            android:label="Finance Tracker Widget"
+            android:label="Finance Tracker (Ringkasan Saldo)"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -48,6 +57,20 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/finance_widget_info" />
+        </receiver>
+
+        <!-- Home Screen AppWidget Receiver (4x2 Voice & Transaction Note Card) -->
+        <receiver
+            android:name=".FinanceVoiceWidgetProvider"
+            android:label="Finance Tracker (Catatan Suara 4x2)"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.pujo.financee.UPDATE_VOICE_WIDGET" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/finance_widget_large_info" />
         </receiver>
 
         <provider

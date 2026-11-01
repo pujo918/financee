@@ -4,4 +4,6 @@
     <string name="title_activity_main">Finance Tracker</string>
     <string name="package_name">com.pujo.financee</string>
     <string name="custom_url_scheme">com.pujo.financee</string>
+    <string name="widget_4x2_description">Catatan Keuangan &amp; Voice Input 4x2</string>
+    <string name="widget_summary_description">Ringkasan Saldo Keuangan Bulanan</string>
 </resources>
