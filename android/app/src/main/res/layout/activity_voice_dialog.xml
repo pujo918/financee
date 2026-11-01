@@ -28,12 +28,12 @@
 
             <ImageView
                 android:id="@+id/dialogAvatar"
-                android:layout_width="34dp"
-                android:layout_height="34dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:background="@drawable/widget_avatar_bg_onepiece"
                 android:padding="2dp"
                 android:src="@drawable/avatar_luffy"
-                android:scaleType="centerCrop"
+                android:scaleType="fitCenter"
                 android:contentDescription="Avatar" />
 
             <LinearLayout

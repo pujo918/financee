@@ -43,18 +43,18 @@
 
                 <ImageView
                     android:id="@+id/widgetAvatarLuffy"
-                    android:layout_width="42dp"
-                    android:layout_height="42dp"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
                     android:background="@drawable/widget_avatar_bg_onepiece"
                     android:padding="2dp"
                     android:src="@drawable/avatar_luffy"
-                    android:scaleType="centerCrop"
-                    android:contentDescription="Avatar Luffy" />
+                    android:scaleType="fitCenter"
+                    android:contentDescription="Avatar One Piece" />
 
                 <ImageView
                     android:id="@+id/widgetAvatarNaruto"
-                    android:layout_width="42dp"
-                    android:layout_height="42dp"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
                     android:background="@drawable/widget_avatar_bg_naruto"
                     android:padding="2dp"
                     android:src="@drawable/avatar_naruto"

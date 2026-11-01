@@ -134,6 +134,7 @@ public class VoiceDialogActivity extends Activity {
         if ("naruto".equalsIgnoreCase(currentTheme)) {
             dialogCard.setBackgroundResource(R.drawable.widget_bg_naruto);
             dialogAvatar.setImageResource(R.drawable.avatar_naruto);
+            dialogAvatar.setScaleType(ImageView.ScaleType.CENTER_CROP);
             dialogAvatar.setBackgroundResource(R.drawable.widget_avatar_bg_naruto);
             dialogMicGlow.setBackgroundResource(R.drawable.widget_glow_mic_orange);
             dialogStatusText.setTextColor(0xFFF97316);
@@ -141,6 +142,7 @@ public class VoiceDialogActivity extends Activity {
         } else {
             dialogCard.setBackgroundResource(R.drawable.widget_bg_onepiece);
             dialogAvatar.setImageResource(R.drawable.avatar_luffy);
+            dialogAvatar.setScaleType(ImageView.ScaleType.FIT_CENTER);
             dialogAvatar.setBackgroundResource(R.drawable.widget_avatar_bg_onepiece);
             dialogMicGlow.setBackgroundResource(R.drawable.widget_glow_mic_cyan);
             dialogStatusText.setTextColor(0xFF38BDF8);
@@ -355,34 +357,62 @@ public class VoiceDialogActivity extends Activity {
         String lower = input.toLowerCase();
 
         // 1. Determine Type & Category
-        if (lower.contains("gaji") || lower.contains("dapat") || lower.contains("terima") ||
-            lower.contains("bonus") || lower.contains("pemasukan") || lower.contains("transferan") || lower.contains("kiriman")) {
+        if (lower.contains("gaji") || lower.contains("salary") || lower.contains("bonus") ||
+            lower.contains("pemasukan") || lower.contains("transferan") || lower.contains("kiriman") ||
+            lower.contains("dapat uang") || lower.contains("terima uang") || lower.contains("komisi") ||
+            lower.contains("cair") || lower.contains("thr") || lower.contains("angpao")) {
             currentType = "income";
             currentCategory = "salary";
             currentCategoryLabel = "Gaji / Pemasukan";
         } else {
             currentType = "expense";
-            if (lower.contains("bensin") || lower.contains("pertalite") || lower.contains("pertamax") ||
-                lower.contains("gojek") || lower.contains("grab") || lower.contains("ojol") ||
-                lower.contains("parkir") || lower.contains("tol") || lower.contains("angkot") ||
-                lower.contains("kereta") || lower.contains("bus") || lower.contains("ongkir")) {
+
+            // CHECK FOOD FIRST (Food & Drink is the primary daily transaction)
+            if (lower.contains("makan") || lower.contains("minum") || lower.contains("roti") ||
+                lower.contains("bakso") || lower.contains("mie") || lower.contains("nasi") ||
+                lower.contains("ayam") || lower.contains("sate") || lower.contains("soto") ||
+                lower.contains("kopi") || lower.contains("coffee") || lower.contains("es teh") ||
+                lower.contains("teh") || lower.contains("snack") || lower.contains("cemilan") ||
+                lower.contains("jajan") || lower.contains("cafe") || lower.contains("kafe") ||
+                lower.contains("warung") || lower.contains("warkop") || lower.contains("indomie") ||
+                lower.contains("burger") || lower.contains("pizza") || lower.contains("martabak") ||
+                lower.contains("gorengan") || lower.contains("sarapan") || lower.contains("siang") ||
+                lower.contains("jus") || lower.contains("buah") || lower.contains("sayur") ||
+                lower.contains("daging") || lower.contains("telur") || lower.contains("beras")) {
+                currentCategory = "food";
+                currentCategoryLabel = "Makanan & Minuman";
+            } else if (lower.contains("bensin") || lower.contains("pertalite") || lower.contains("pertamax") ||
+                       lower.contains("solar") || lower.contains("gojek") || lower.contains("gocar") ||
+                       lower.contains("grab") || lower.contains("ojol") || lower.contains("ojek") ||
+                       lower.contains("maxim") || lower.contains("indrive") || lower.contains("parkir") ||
+                       lower.contains("tol") || lower.contains("angkot") || lower.contains("kereta") ||
+                       lower.contains("krl") || lower.contains("mrt") || lower.contains("lrt") ||
+                       lower.contains("bus") || lower.contains("ongkir") || lower.contains("tambal ban")) {
                 currentCategory = "transport";
                 currentCategoryLabel = "Transportasi";
             } else if (lower.contains("pulsa") || lower.contains("listrik") || lower.contains("token") ||
                        lower.contains("wifi") || lower.contains("pdam") || lower.contains("air") ||
-                       lower.contains("bpjs") || lower.contains("kuota")) {
+                       lower.contains("bpjs") || lower.contains("kuota") || lower.contains("paket data") ||
+                       lower.contains("kos") || lower.contains("kost") || lower.contains("kontrakan") ||
+                       lower.contains("cicilan") || lower.contains("iuran")) {
                 currentCategory = "bills";
                 currentCategoryLabel = "Tagihan";
-            } else if (lower.contains("baju") || lower.contains("sepatu") || lower.contains("celana") ||
-                       lower.contains("shopee") || lower.contains("tokopedia") || lower.contains("beli") ||
-                       lower.contains("lazada") || lower.contains("belanja") || lower.contains("skincare")) {
-                currentCategory = "shopping";
-                currentCategoryLabel = "Belanja";
-            } else if (lower.contains("bioskop") || lower.contains("nonton") || lower.contains("game") ||
-                       lower.contains("top up") || lower.contains("diamond") || lower.contains("steam") ||
-                       lower.contains("liburan") || lower.contains("karaoke")) {
+            } else if (lower.contains("bioskop") || lower.contains("nonton") || lower.contains("cinema") ||
+                       lower.contains("cgv") || lower.contains("xxi") || lower.contains("game") ||
+                       lower.contains("top up") || lower.contains("topup") || lower.contains("diamond") ||
+                       lower.contains("steam") || lower.contains("liburan") || lower.contains("karaoke") ||
+                       lower.contains("wisata") || lower.contains("pantai") || lower.contains("netflix") ||
+                       lower.contains("spotify")) {
                 currentCategory = "entertainment";
                 currentCategoryLabel = "Hiburan";
+            } else if (lower.contains("baju") || lower.contains("sepatu") || lower.contains("celana") ||
+                       lower.contains("kaos") || lower.contains("jaket") || lower.contains("tas") ||
+                       lower.contains("dompet") || lower.contains("sandal") || lower.contains("skincare") ||
+                       lower.contains("makeup") || lower.contains("kosmetik") || lower.contains("shopee") ||
+                       lower.contains("tokopedia") || lower.contains("lazada") || lower.contains("tiktok shop") ||
+                       lower.contains("mall") || lower.contains("belanja")) {
+                currentCategory = "shopping";
+                currentCategoryLabel = "Belanja";
             } else {
                 currentCategory = "food";
                 currentCategoryLabel = "Makanan & Minuman";
@@ -395,7 +425,12 @@ public class VoiceDialogActivity extends Activity {
 
     public static long extractIndonesianAmount(String input) {
         if (input == null || input.trim().isEmpty()) return 0;
-        String text = input.toLowerCase().trim();
+
+        // Normalize currency prefixes (e.g. "Rp6.000", "Rp. 6.000", "IDR 6000", "Rp 6000")
+        String text = input.toLowerCase()
+            .replaceAll("(?i)(?:rp|idr|rupiah)\\.?\\s*", " ")
+            .replaceAll("\\s+", " ")
+            .trim();
 
         // Regex Pattern 1: e.g. "1.5 juta", "2 juta", "1 jt"
         Pattern pJuta = Pattern.compile("(\\d+(?:[.,]\\d+)?)\\s*(?:juta|jt|million)\\b");
@@ -407,7 +442,7 @@ public class VoiceDialogActivity extends Activity {
             } catch (Exception ignored) {}
         }
 
-        // Regex Pattern 2: e.g. "10 ribu", "30rb", "25k", "50 rebu"
+        // Regex Pattern 2: e.g. "10 ribu", "30rb", "25k", "6 rebu"
         Pattern pRibu = Pattern.compile("(\\d+(?:[.,]\\d+)?)\\s*(?:ribu|rb|rebu|k\\b|thousand)");
         Matcher mRibu = pRibu.matcher(text);
         if (mRibu.find()) {
@@ -417,8 +452,8 @@ public class VoiceDialogActivity extends Activity {
             } catch (Exception ignored) {}
         }
 
-        // Regex Pattern 3: Plain numbers e.g. "25000", "25.000", "10000", "30000"
-        Pattern pPlain = Pattern.compile("\\b(\\d{1,3}(?:[.,]\\d{3})+|\\d{4,9})\\b");
+        // Regex Pattern 3: Plain or formatted numbers e.g. "6.000", "25000", "25.000", "10000", "30000"
+        Pattern pPlain = Pattern.compile("(?:^|\\s|[a-z])(\\d{1,3}(?:[.,]\\d{3})+|\\d{4,9})(?:\\s|[a-z]|$)");
         Matcher mPlain = pPlain.matcher(text);
         if (mPlain.find()) {
             try {
