@@ -50,7 +50,8 @@ public class FinanceWidgetProvider extends AppWidgetProvider {
 
             // Click on 1-Tap Mic Button -> Launch VoiceDialogActivity directly without opening full app
             Intent voiceIntent = new Intent(context, VoiceDialogActivity.class);
-            voiceIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            voiceIntent.putExtra(VoiceDialogActivity.EXTRA_START_IN_EDIT_MODE, false);
+            voiceIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             PendingIntent voicePendingIntent = PendingIntent.getActivity(
                 context, 102, voiceIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );

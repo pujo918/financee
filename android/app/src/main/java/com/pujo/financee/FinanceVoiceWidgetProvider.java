@@ -31,13 +31,31 @@ public class FinanceVoiceWidgetProvider extends AppWidgetProvider {
 
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.finance_widget_large_layout);
 
-            // Update Theme Avatar & Glow Accent using safe RemoteViews methods
+            // Update Theme Avatar, Background, Badge, and Glow Accent
             if ("naruto".equalsIgnoreCase(theme)) {
-                views.setImageViewResource(R.id.widgetLargeAvatar, R.drawable.avatar_naruto);
+                // Naruto Theme Active
+                views.setViewVisibility(R.id.widgetLargeBgNaruto, View.VISIBLE);
+                views.setViewVisibility(R.id.widgetLargeBgOnePiece, View.GONE);
+
+                views.setViewVisibility(R.id.widgetAvatarNaruto, View.VISIBLE);
+                views.setViewVisibility(R.id.widgetAvatarLuffy, View.GONE);
+
+                views.setViewVisibility(R.id.widgetThemeBadgeNaruto, View.VISIBLE);
+                views.setViewVisibility(R.id.widgetThemeBadgeOnePiece, View.GONE);
+
                 views.setViewVisibility(R.id.widgetLargeMicGlowOrange, View.VISIBLE);
                 views.setViewVisibility(R.id.widgetLargeMicGlowCyan, View.GONE);
             } else {
-                views.setImageViewResource(R.id.widgetLargeAvatar, R.drawable.avatar_luffy);
+                // One Piece Theme Active (Default)
+                views.setViewVisibility(R.id.widgetLargeBgOnePiece, View.VISIBLE);
+                views.setViewVisibility(R.id.widgetLargeBgNaruto, View.GONE);
+
+                views.setViewVisibility(R.id.widgetAvatarLuffy, View.VISIBLE);
+                views.setViewVisibility(R.id.widgetAvatarNaruto, View.GONE);
+
+                views.setViewVisibility(R.id.widgetThemeBadgeOnePiece, View.VISIBLE);
+                views.setViewVisibility(R.id.widgetThemeBadgeNaruto, View.GONE);
+
                 views.setViewVisibility(R.id.widgetLargeMicGlowCyan, View.VISIBLE);
                 views.setViewVisibility(R.id.widgetLargeMicGlowOrange, View.GONE);
             }
@@ -59,27 +77,29 @@ public class FinanceVoiceWidgetProvider extends AppWidgetProvider {
                 views.setTextColor(R.id.widgetLargeNominalText, 0xFF34D399);
             }
 
-            // Click on Mic Button -> Launch VoiceDialogActivity (Floating Dialog over Home Screen)
-            Intent voiceDialogIntent = new Intent(context, VoiceDialogActivity.class);
-            voiceDialogIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            PendingIntent voiceDialogPendingIntent = PendingIntent.getActivity(
-                context, 201, voiceDialogIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            // 1. Mic Button -> Launch VoiceDialogActivity (Floating Voice Popup)
+            Intent voiceIntent = new Intent(context, VoiceDialogActivity.class);
+            voiceIntent.putExtra(VoiceDialogActivity.EXTRA_START_IN_EDIT_MODE, false);
+            voiceIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent voicePendingIntent = PendingIntent.getActivity(
+                context, 201, voiceIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
-            views.setOnClickPendingIntent(R.id.widgetLargeMicButton, voiceDialogPendingIntent);
+            views.setOnClickPendingIntent(R.id.widgetLargeMicButton, voicePendingIntent);
 
-            // Click on "Simpan" Button on Widget -> Also triggers voice dialog if needed
-            views.setOnClickPendingIntent(R.id.widgetLargeSaveButton, voiceDialogPendingIntent);
+            // 2. Simpan Button -> Launch VoiceDialogActivity
+            views.setOnClickPendingIntent(R.id.widgetLargeSaveButton, voicePendingIntent);
 
-            // Click on "Edit" Button on Widget -> Open MainActivity Dashboard
-            Intent openAppIntent = new Intent(context, MainActivity.class);
-            openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            PendingIntent openAppPendingIntent = PendingIntent.getActivity(
-                context, 202, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            // 3. EDIT Button -> Launch VoiceDialogActivity in INLINE EDIT MODE (Does NOT open MainActivity!)
+            Intent editIntent = new Intent(context, VoiceDialogActivity.class);
+            editIntent.putExtra(VoiceDialogActivity.EXTRA_START_IN_EDIT_MODE, true);
+            editIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent editPendingIntent = PendingIntent.getActivity(
+                context, 202, editIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
-            views.setOnClickPendingIntent(R.id.widgetLargeEditButton, openAppPendingIntent);
+            views.setOnClickPendingIntent(R.id.widgetLargeEditButton, editPendingIntent);
 
-            // Click on Card Root -> Open App Dashboard
-            views.setOnClickPendingIntent(R.id.widgetLargeRootLayout, openAppPendingIntent);
+            // 4. Card Root Tap -> Launch VoiceDialogActivity or App
+            views.setOnClickPendingIntent(R.id.widgetLargeRootLayout, voicePendingIntent);
 
             appWidgetManager.updateAppWidget(appWidgetId, views);
         } catch (Throwable t) {

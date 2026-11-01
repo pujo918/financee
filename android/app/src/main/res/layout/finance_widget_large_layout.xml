@@ -1,303 +1,366 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widgetLargeRootLayout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="12dp"
-    android:background="@drawable/widget_bg_4x2">
+    android:layout_height="match_parent">
 
-    <!-- Top Bar: Avatar, Title & Subtitle -->
+    <!-- Theme Background 1: One Piece Ocean Navy -->
+    <ImageView
+        android:id="@+id/widgetLargeBgOnePiece"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_bg_onepiece"
+        android:contentDescription="One Piece Background" />
+
+    <!-- Theme Background 2: Naruto Fiery Slate -->
+    <ImageView
+        android:id="@+id/widgetLargeBgNaruto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_bg_naruto"
+        android:visibility="gone"
+        android:contentDescription="Naruto Background" />
+
+    <!-- Foreground Content -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingBottom="6dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="12dp">
 
-        <ImageView
-            android:id="@+id/widgetLargeAvatar"
-            android:layout_width="26dp"
-            android:layout_height="26dp"
-            android:background="@drawable/widget_avatar_bg"
-            android:padding="2dp"
-            android:src="@drawable/avatar_luffy"
-            android:scaleType="centerInside"
-            android:contentDescription="Avatar" />
-
+        <!-- Top Bar: Prominent Character Avatar, Title, & Theme Badge -->
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingBottom="6dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Catatan Keuangan"
-                android:textColor="#f8fafc"
-                android:textSize="12.5sp"
-                android:textStyle="bold" />
+            <!-- Avatar Frame -->
+            <FrameLayout
+                android:layout_width="42dp"
+                android:layout_height="42dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Ketuk &amp; Bicara"
-                android:textColor="#94a3b8"
-                android:textSize="10sp" />
-        </LinearLayout>
+                <ImageView
+                    android:id="@+id/widgetAvatarLuffy"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:background="@drawable/widget_avatar_bg_onepiece"
+                    android:padding="2dp"
+                    android:src="@drawable/avatar_luffy"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="Avatar Luffy" />
 
-        <TextView
-            android:id="@+id/widgetLargeDateBadge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Hari Ini"
-            android:textColor="#64748b"
-            android:textSize="10sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+                <ImageView
+                    android:id="@+id/widgetAvatarNaruto"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:background="@drawable/widget_avatar_bg_naruto"
+                    android:padding="2dp"
+                    android:src="@drawable/avatar_naruto"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone"
+                    android:contentDescription="Avatar Naruto" />
+            </FrameLayout>
 
-    <!-- Main Content Area: 2 Columns -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <!-- Column 1: Glowing Mic & Quoted Transcript -->
-        <LinearLayout
-            android:id="@+id/widgetLargeMicButton"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:clickable="true"
-            android:focusable="true">
-
-            <!-- Mic Circle with Soundwaves on Left/Right -->
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center">
+                android:layout_weight="1"
+                android:layout_marginStart="10dp"
+                android:orientation="vertical">
 
-                <ImageView
-                    android:id="@+id/widgetSoundwaveLeft"
-                    android:layout_width="16dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_soundwave"
-                    android:contentDescription="Soundwave" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Catatan Keuangan"
+                    android:textColor="#f8fafc"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
 
-                <FrameLayout
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:layout_marginStart="6dp"
-                    android:layout_marginEnd="6dp">
-
-                    <ImageView
-                        android:id="@+id/widgetLargeMicGlowCyan"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:background="@drawable/widget_glow_mic_cyan"
-                        android:padding="11dp"
-                        android:src="@drawable/ic_mic_widget"
-                        android:contentDescription="Mic Cyan" />
-
-                    <ImageView
-                        android:id="@+id/widgetLargeMicGlowOrange"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:background="@drawable/widget_glow_mic_orange"
-                        android:padding="11dp"
-                        android:src="@drawable/ic_mic_widget"
-                        android:visibility="gone"
-                        android:contentDescription="Mic Orange" />
-                </FrameLayout>
-
-                <ImageView
-                    android:id="@+id/widgetSoundwaveRight"
-                    android:layout_width="16dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_soundwave"
-                    android:contentDescription="Soundwave" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ketuk &amp; Bicara"
+                    android:textColor="#94a3b8"
+                    android:textSize="10.5sp" />
             </LinearLayout>
 
-            <!-- Quoted Transcript text -->
-            <TextView
-                android:id="@+id/widgetLargeTranscriptText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:gravity="center"
-                android:maxLines="2"
-                android:text="&quot;Ketuk mic untuk bicara&quot;"
-                android:textColor="#cbd5e1"
-                android:textSize="10.5sp"
-                android:textStyle="italic" />
+            <!-- Theme Badge Indicator -->
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/widgetThemeBadgeOnePiece"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/widget_badge_onepiece"
+                    android:paddingStart="7dp"
+                    android:paddingEnd="7dp"
+                    android:paddingTop="3dp"
+                    android:paddingBottom="3dp"
+                    android:text="ONE PIECE"
+                    android:textColor="#38bdf8"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/widgetThemeBadgeNaruto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/widget_badge_naruto"
+                    android:paddingStart="7dp"
+                    android:paddingEnd="7dp"
+                    android:paddingTop="3dp"
+                    android:paddingBottom="3dp"
+                    android:text="NARUTO"
+                    android:textColor="#f97316"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+            </FrameLayout>
         </LinearLayout>
 
-        <!-- Vertical Divider line (using ImageView for RemoteViews compatibility) -->
-        <ImageView
-            android:layout_width="1dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="4dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="4dp"
-            android:background="#1e293b"
-            android:contentDescription="Divider" />
-
-        <!-- Column 2: Transaction Details & Action Buttons -->
+        <!-- Main Body: 2 Columns -->
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1.2"
-            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <!-- Nominal -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Nominal"
-                android:textColor="#94a3b8"
-                android:textSize="9.5sp" />
-
-            <TextView
-                android:id="@+id/widgetLargeNominalText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:maxLines="1"
-                android:text="Rp 0"
-                android:textColor="#34d399"
-                android:textSize="17sp"
-                android:textStyle="bold" />
-
-            <!-- Category & Type in Compact Rows -->
+            <!-- Column 1: Mic Button with Soundwaves & Quoted Transcript -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="2dp">
+                android:id="@+id/widgetLargeMicButton"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true">
 
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Kategori"
-                        android:textColor="#94a3b8"
-                        android:textSize="9sp" />
-
-                    <TextView
-                        android:id="@+id/widgetLargeCategoryText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:maxLines="1"
-                        android:text="Makanan"
-                        android:textColor="#f1f5f9"
-                        android:textSize="10.5sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
+                <!-- Mic Circle with Soundwaves -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="end">
+                    android:orientation="horizontal"
+                    android:gravity="center">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Tipe"
-                        android:textColor="#94a3b8"
-                        android:textSize="9sp" />
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_soundwave"
+                        android:contentDescription="Soundwave Left" />
 
-                    <TextView
-                        android:id="@+id/widgetLargeTypeText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:maxLines="1"
-                        android:text="Pengeluaran"
-                        android:textColor="#f87171"
-                        android:textSize="10.5sp"
-                        android:textStyle="bold" />
+                    <FrameLayout
+                        android:layout_width="46dp"
+                        android:layout_height="46dp"
+                        android:layout_marginStart="6dp"
+                        android:layout_marginEnd="6dp">
+
+                        <ImageView
+                            android:id="@+id/widgetLargeMicGlowCyan"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/widget_glow_mic_cyan"
+                            android:padding="12dp"
+                            android:src="@drawable/ic_mic_widget"
+                            android:contentDescription="Mic Cyan" />
+
+                        <ImageView
+                            android:id="@+id/widgetLargeMicGlowOrange"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/widget_glow_mic_orange"
+                            android:padding="12dp"
+                            android:src="@drawable/ic_mic_widget"
+                            android:visibility="gone"
+                            android:contentDescription="Mic Orange" />
+                    </FrameLayout>
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_soundwave"
+                        android:contentDescription="Soundwave Right" />
                 </LinearLayout>
+
+                <!-- Quoted Transcript text -->
+                <TextView
+                    android:id="@+id/widgetLargeTranscriptText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:gravity="center"
+                    android:maxLines="2"
+                    android:text="&quot;Ketuk mic untuk bicara&quot;"
+                    android:textColor="#cbd5e1"
+                    android:textSize="10.5sp"
+                    android:textStyle="italic" />
             </LinearLayout>
 
-            <!-- Bottom Buttons: [Edit] and [Simpan] -->
+            <!-- Vertical Divider -->
+            <ImageView
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:background="#27354f"
+                android:contentDescription="Divider" />
+
+            <!-- Column 2: Nominal, Category, Type & Action Buttons -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="6dp">
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1.25"
+                android:orientation="vertical"
+                android:gravity="center_vertical">
 
-                <LinearLayout
-                    android:id="@+id/widgetLargeEditButton"
-                    android:layout_width="0dp"
+                <!-- Nominal -->
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:text="Nominal"
+                    android:textColor="#94a3b8"
+                    android:textSize="9.5sp" />
+
+                <TextView
+                    android:id="@+id/widgetLargeNominalText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:text="Rp 0"
+                    android:textColor="#34d399"
+                    android:textSize="17.5sp"
+                    android:textStyle="bold" />
+
+                <!-- Category & Type -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="center"
-                    android:background="@drawable/widget_btn_edit"
-                    android:paddingTop="4dp"
-                    android:paddingBottom="4dp"
-                    android:clickable="true"
-                    android:focusable="true">
+                    android:layout_marginTop="3dp">
 
-                    <ImageView
-                        android:layout_width="10dp"
-                        android:layout_height="10dp"
-                        android:src="@drawable/ic_edit_small"
-                        android:contentDescription="Edit" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
 
-                    <TextView
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Kategori"
+                            android:textColor="#94a3b8"
+                            android:textSize="9sp" />
+
+                        <TextView
+                            android:id="@+id/widgetLargeCategoryText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:maxLines="1"
+                            android:text="Makanan"
+                            android:textColor="#f1f5f9"
+                            android:textSize="10.5sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="3dp"
-                        android:text="Edit"
-                        android:textColor="#cbd5e1"
-                        android:textSize="10sp"
-                        android:textStyle="bold" />
+                        android:orientation="vertical"
+                        android:gravity="end">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tipe"
+                            android:textColor="#94a3b8"
+                            android:textSize="9sp" />
+
+                        <TextView
+                            android:id="@+id/widgetLargeTypeText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:maxLines="1"
+                            android:text="Pengeluaran"
+                            android:textColor="#f87171"
+                            android:textSize="10.5sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
                 </LinearLayout>
 
+                <!-- Buttons: [Edit] and [Simpan] -->
                 <LinearLayout
-                    android:id="@+id/widgetLargeSaveButton"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1.2"
-                    android:layout_marginStart="6dp"
                     android:orientation="horizontal"
-                    android:gravity="center"
-                    android:background="@drawable/widget_btn_save"
-                    android:paddingTop="4dp"
-                    android:paddingBottom="4dp"
-                    android:clickable="true"
-                    android:focusable="true">
+                    android:layout_marginTop="6dp">
 
-                    <ImageView
-                        android:layout_width="10dp"
-                        android:layout_height="10dp"
-                        android:src="@drawable/ic_check_small"
-                        android:contentDescription="Simpan" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:id="@+id/widgetLargeEditButton"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="3dp"
-                        android:text="Simpan"
-                        android:textColor="#ffffff"
-                        android:textSize="10sp"
-                        android:textStyle="bold" />
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:background="@drawable/widget_btn_edit"
+                        android:paddingTop="5dp"
+                        android:paddingBottom="5dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:src="@drawable/ic_edit_small"
+                            android:contentDescription="Edit" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="3dp"
+                            android:text="Edit"
+                            android:textColor="#cbd5e1"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/widgetLargeSaveButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1.2"
+                        android:layout_marginStart="6dp"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:background="@drawable/widget_btn_save"
+                        android:paddingTop="5dp"
+                        android:paddingBottom="5dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:src="@drawable/ic_check_small"
+                            android:contentDescription="Simpan" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="3dp"
+                            android:text="Simpan"
+                            android:textColor="#ffffff"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
-</LinearLayout>
+</FrameLayout>

@@ -124,12 +124,17 @@
         document.body.classList.remove('naruto', 'onepiece', 'original');
         document.body.classList.add(theme);
 
+        window.syncThemeToAndroidWidget(theme);
+    }
+
+    window.syncThemeToAndroidWidget = function (themeOverride) {
         try {
+            const active = themeOverride || localStorage.getItem(IMAGE_THEME_KEY) || IMAGE_THEME_DEFAULT;
             if (window.AndroidWidget && typeof window.AndroidWidget.setTheme === 'function') {
-                window.AndroidWidget.setTheme(theme);
+                window.AndroidWidget.setTheme(active);
             }
         } catch (e) {}
-    }
+    };
 
     function setImageTheme(themeName) {
         const previous = localStorage.getItem(IMAGE_THEME_KEY) || IMAGE_THEME_DEFAULT;
@@ -137,6 +142,8 @@
         const next = validThemes.includes(themeName) ? themeName : IMAGE_THEME_DEFAULT;
         const select = document.getElementById('animeThemeSelect');
         if (select) select.value = next;
+
+        window.syncThemeToAndroidWidget(next);
         if (previous === next) return;
 
         runThemeLoading(next, function () {
@@ -144,6 +151,7 @@
             applyImageTheme(next);
             applyThemeCopy(next);
             showThemeToast(next);
+            window.syncThemeToAndroidWidget(next);
             if (typeof window.renderAnalytics === 'function' && document.getElementById('analyticsTab')?.classList.contains('active')) {
                 window.renderAnalytics();
             }
@@ -943,4 +951,13 @@ window.getUnformattedValue = function (elementId) {
             }
         }
     };
+
+    // Ensure initial theme synchronizes to Android Home Screen Widget in real time
+    [100, 400, 1000, 2500].forEach(function (delay) {
+        setTimeout(function () {
+            if (typeof window.syncThemeToAndroidWidget === 'function') {
+                window.syncThemeToAndroidWidget();
+            }
+        }, delay);
+    });
 })();

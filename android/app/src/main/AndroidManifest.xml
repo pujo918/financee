@@ -36,13 +36,17 @@
 
         </activity>
 
-        <!-- Floating Voice Input Dialog Activity -->
+        <!-- Floating Voice Input Dialog Activity (Isolated Task Affinity so it never surfaces MainActivity) -->
         <activity
             android:name=".VoiceDialogActivity"
             android:label="Catatan Suara"
             android:theme="@style/Theme.TransparentDialog"
-            android:launchMode="singleTop"
+            android:launchMode="singleInstance"
+            android:taskAffinity="com.pujo.financee.voicepopup"
             android:excludeFromRecents="true"
+            android:documentLaunchMode="always"
+            android:autoRemoveFromRecents="true"
+            android:windowIsTranslucent="true"
             android:exported="true" />
 
         <!-- Home Screen AppWidget Receiver (4x1 / 2x2 Summary) -->

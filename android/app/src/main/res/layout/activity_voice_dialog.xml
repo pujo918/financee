@@ -3,8 +3,8 @@
     android:id="@+id/dialogOutsideOverlay"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#66000000"
-    android:padding="20dp">
+    android:background="#77000000"
+    android:padding="16dp">
 
     <!-- Centered Floating Dialog Card -->
     <LinearLayout
@@ -14,11 +14,11 @@
         android:layout_gravity="center"
         android:orientation="vertical"
         android:padding="16dp"
-        android:background="@drawable/widget_bg_4x2"
+        android:background="@drawable/widget_bg_onepiece"
         android:clickable="true"
         android:focusable="true">
 
-        <!-- Header -->
+        <!-- Top Header: Avatar, Mode/Status, Close Button -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -28,12 +28,12 @@
 
             <ImageView
                 android:id="@+id/dialogAvatar"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:background="@drawable/widget_avatar_bg"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="@drawable/widget_avatar_bg_onepiece"
                 android:padding="2dp"
                 android:src="@drawable/avatar_luffy"
-                android:scaleType="centerInside"
+                android:scaleType="centerCrop"
                 android:contentDescription="Avatar" />
 
             <LinearLayout
@@ -44,9 +44,10 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/dialogTitleText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Catatan Suara Langsung"
+                    android:text="Catatan Keuangan Cepat"
                     android:textColor="#f8fafc"
                     android:textSize="14sp"
                     android:textStyle="bold" />
@@ -65,14 +66,15 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:padding="6dp"
-                android:text="Batal"
+                android:text="Tutup"
                 android:textColor="#94a3b8"
                 android:textSize="12sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Body: 2 Columns -->
+        <!-- ================= MODE 1: VOICE INPUT SECTION ================= -->
         <LinearLayout
+            android:id="@+id/dialogVoiceSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -87,7 +89,9 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:orientation="vertical"
-                android:gravity="center">
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true">
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -96,16 +100,15 @@
                     android:gravity="center">
 
                     <ImageView
-                        android:id="@+id/dialogSoundwaveLeft"
-                        android:layout_width="18dp"
-                        android:layout_height="24dp"
+                        android:layout_width="16dp"
+                        android:layout_height="22dp"
                         android:src="@drawable/ic_soundwave"
-                        android:contentDescription="Soundwave" />
+                        android:contentDescription="Soundwave Left" />
 
                     <ImageView
                         android:id="@+id/dialogMicGlow"
-                        android:layout_width="54dp"
-                        android:layout_height="54dp"
+                        android:layout_width="52dp"
+                        android:layout_height="52dp"
                         android:layout_marginStart="8dp"
                         android:layout_marginEnd="8dp"
                         android:background="@drawable/widget_glow_mic_cyan"
@@ -114,11 +117,10 @@
                         android:contentDescription="Mic" />
 
                     <ImageView
-                        android:id="@+id/dialogSoundwaveRight"
-                        android:layout_width="18dp"
-                        android:layout_height="24dp"
+                        android:layout_width="16dp"
+                        android:layout_height="22dp"
                         android:src="@drawable/ic_soundwave"
-                        android:contentDescription="Soundwave" />
+                        android:contentDescription="Soundwave Right" />
                 </LinearLayout>
 
                 <TextView
@@ -135,18 +137,19 @@
             </LinearLayout>
 
             <!-- Divider -->
-            <View
+            <ImageView
                 android:layout_width="1dp"
-                android:layout_height="110dp"
+                android:layout_height="115dp"
                 android:layout_marginStart="8dp"
                 android:layout_marginEnd="12dp"
-                android:background="#27354f" />
+                android:background="#27354f"
+                android:contentDescription="Divider" />
 
-            <!-- Right: Parsed details & buttons -->
+            <!-- Right: Parsed details & Action Buttons -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1.2"
+                android:layout_weight="1.25"
                 android:orientation="vertical">
 
                 <TextView
@@ -190,7 +193,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:maxLines="1"
-                            android:text="-"
+                            android:text="Makanan"
                             android:textColor="#f8fafc"
                             android:textSize="11.5sp"
                             android:textStyle="bold" />
@@ -286,6 +289,302 @@
                             android:textSize="11sp"
                             android:textStyle="bold" />
                     </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ================= MODE 2: INLINE EDIT SECTION ================= -->
+        <LinearLayout
+            android:id="@+id/dialogEditSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <!-- Nominal Amount Input -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nominal Transaksi (Rp)"
+                android:textColor="#94a3b8"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/editAmountInput"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/dialog_input_bg"
+                android:inputType="number"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:text="25000"
+                android:textColor="#34d399"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <!-- Quick Increment Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="6dp">
+
+                <TextView
+                    android:id="@+id/chipAdd5k"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/dialog_chip_unselected"
+                    android:gravity="center"
+                    android:paddingTop="5dp"
+                    android:paddingBottom="5dp"
+                    android:text="+5rb"
+                    android:textColor="#94a3b8"
+                    android:textSize="10.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/chipAdd10k"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/dialog_chip_unselected"
+                    android:gravity="center"
+                    android:paddingTop="5dp"
+                    android:paddingBottom="5dp"
+                    android:text="+10rb"
+                    android:textColor="#94a3b8"
+                    android:textSize="10.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/chipAdd25k"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/dialog_chip_unselected"
+                    android:gravity="center"
+                    android:paddingTop="5dp"
+                    android:paddingBottom="5dp"
+                    android:text="+25rb"
+                    android:textColor="#94a3b8"
+                    android:textSize="10.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/chipAdd50k"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/dialog_chip_unselected"
+                    android:gravity="center"
+                    android:paddingTop="5dp"
+                    android:paddingBottom="5dp"
+                    android:text="+50rb"
+                    android:textColor="#94a3b8"
+                    android:textSize="10.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/chipResetAmount"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.8"
+                    android:background="@drawable/dialog_chip_unselected"
+                    android:gravity="center"
+                    android:paddingTop="5dp"
+                    android:paddingBottom="5dp"
+                    android:text="0"
+                    android:textColor="#f87171"
+                    android:textSize="10.5sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Category Selector (2 Rows of Chips) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Pilih Kategori"
+                android:textColor="#94a3b8"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp">
+
+                <TextView
+                    android:id="@+id/catFood"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/dialog_chip_selected"
+                    android:gravity="center"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:text="Makanan"
+                    android:textColor="#ffffff"
+                    android:textSize="10.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/catTransport"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/dialog_chip_unselected"
+                    android:gravity="center"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:text="Transport"
+                    android:textColor="#cbd5e1"
+                    android:textSize="10.5sp" />
+
+                <TextView
+                    android:id="@+id/catBills"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/dialog_chip_unselected"
+                    android:gravity="center"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:text="Tagihan"
+                    android:textColor="#cbd5e1"
+                    android:textSize="10.5sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp">
+
+                <TextView
+                    android:id="@+id/catShopping"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/dialog_chip_unselected"
+                    android:gravity="center"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:text="Belanja"
+                    android:textColor="#cbd5e1"
+                    android:textSize="10.5sp" />
+
+                <TextView
+                    android:id="@+id/catEntertainment"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/dialog_chip_unselected"
+                    android:gravity="center"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:text="Hiburan"
+                    android:textColor="#cbd5e1"
+                    android:textSize="10.5sp" />
+
+                <TextView
+                    android:id="@+id/catSalary"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/dialog_chip_unselected"
+                    android:gravity="center"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:text="Pemasukan"
+                    android:textColor="#cbd5e1"
+                    android:textSize="10.5sp" />
+            </LinearLayout>
+
+            <!-- Note / Description Input -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Keterangan / Catatan"
+                android:textColor="#94a3b8"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/editNoteInput"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/dialog_input_bg"
+                android:inputType="text"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:text="Beli bakso &amp; es teh"
+                android:textColor="#f8fafc"
+                android:textSize="12sp" />
+
+            <!-- Action Buttons for Edit Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="12dp">
+
+                <TextView
+                    android:id="@+id/editBackToVoiceButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/widget_btn_edit"
+                    android:gravity="center"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:text="Mode Suara"
+                    android:textColor="#cbd5e1"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/editSaveButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1.4"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:background="@drawable/widget_btn_save"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:src="@drawable/ic_check_small"
+                        android:contentDescription="Simpan" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="Simpan Catatan"
+                        android:textColor="#ffffff"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>

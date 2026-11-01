@@ -4,14 +4,15 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,68 +30,233 @@ import java.util.regex.Pattern;
 
 public class VoiceDialogActivity extends Activity {
 
-    private SpeechRecognizer speechRecognizer;
-    private TextView transcriptText;
-    private TextView nominalText;
-    private TextView categoryText;
-    private TextView typeText;
-    private TextView statusText;
-    private ImageView micGlow;
-    private ImageView avatarView;
+    public static final String EXTRA_START_IN_EDIT_MODE = "EXTRA_START_IN_EDIT_MODE";
 
+    private SpeechRecognizer speechRecognizer;
+    private View dialogCard;
+    private ImageView dialogAvatar;
+    private TextView dialogTitleText;
+    private TextView dialogStatusText;
+    private TextView dialogCloseButton;
+
+    // Mode 1: Voice
+    private LinearLayout dialogVoiceSection;
+    private ImageView dialogMicGlow;
+    private TextView dialogTranscriptText;
+    private TextView dialogNominalText;
+    private TextView dialogCategoryText;
+    private TextView dialogTypeText;
+    private View dialogEditButton;
+    private View dialogSaveButton;
+
+    // Mode 2: Inline Edit
+    private LinearLayout dialogEditSection;
+    private EditText editAmountInput;
+    private EditText editNoteInput;
+    private TextView catFood;
+    private TextView catTransport;
+    private TextView catBills;
+    private TextView catShopping;
+    private TextView catEntertainment;
+    private TextView catSalary;
+    private TextView editBackToVoiceButton;
+    private View editSaveButton;
+
+    // State
+    private String currentTheme = "onepiece";
     private String currentTranscript = "";
     private long currentAmount = 0;
     private String currentCategory = "food";
     private String currentCategoryLabel = "Makanan & Minuman";
     private String currentType = "expense";
+    private boolean isEditMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_voice_dialog);
 
-        transcriptText = findViewById(R.id.dialogTranscriptText);
-        nominalText = findViewById(R.id.dialogNominalText);
-        categoryText = findViewById(R.id.dialogCategoryText);
-        typeText = findViewById(R.id.dialogTypeText);
-        statusText = findViewById(R.id.dialogStatusText);
-        micGlow = findViewById(R.id.dialogMicGlow);
-        avatarView = findViewById(R.id.dialogAvatar);
+        bindViews();
+        applyThemeStyling();
+        setupListeners();
 
-        SharedPreferences prefs = getSharedPreferences("FinanceWidgetPrefs", Context.MODE_PRIVATE);
-        String theme = prefs.getString("theme", "onepiece");
-        if ("naruto".equalsIgnoreCase(theme)) {
-            avatarView.setImageResource(R.drawable.avatar_naruto);
-            micGlow.setBackgroundResource(R.drawable.widget_glow_mic_orange);
+        // Check if launched directly in edit mode
+        boolean startInEdit = getIntent() != null && getIntent().getBooleanExtra(EXTRA_START_IN_EDIT_MODE, false);
+        if (startInEdit) {
+            SharedPreferences prefs = getSharedPreferences("FinanceWidgetPrefs", Context.MODE_PRIVATE);
+            String lastNominal = prefs.getString("lastNominal", "Rp 0").replace("Rp", "").replace(".", "").replace(",", "").trim();
+            try {
+                currentAmount = Long.parseLong(lastNominal);
+            } catch (Exception ignored) {
+                currentAmount = 25000;
+            }
+            currentTranscript = prefs.getString("lastTranscript", "Beli bakso & es teh").replace("\"", "");
+            switchToEditMode();
         } else {
-            avatarView.setImageResource(R.drawable.avatar_luffy);
-            micGlow.setBackgroundResource(R.drawable.widget_glow_mic_cyan);
+            switchToVoiceMode();
+            startListening();
         }
+    }
 
-        findViewById(R.id.dialogOutsideOverlay).setOnClickListener(v -> finish());
-        findViewById(R.id.dialogCard).setOnClickListener(v -> { /* keep dialog open on card click */ });
-        findViewById(R.id.dialogCloseButton).setOnClickListener(v -> finish());
+    private void bindViews() {
+        dialogCard = findViewById(R.id.dialogCard);
+        dialogAvatar = findViewById(R.id.dialogAvatar);
+        dialogTitleText = findViewById(R.id.dialogTitleText);
+        dialogStatusText = findViewById(R.id.dialogStatusText);
+        dialogCloseButton = findViewById(R.id.dialogCloseButton);
 
+        dialogVoiceSection = findViewById(R.id.dialogVoiceSection);
+        dialogMicGlow = findViewById(R.id.dialogMicGlow);
+        dialogTranscriptText = findViewById(R.id.dialogTranscriptText);
+        dialogNominalText = findViewById(R.id.dialogNominalText);
+        dialogCategoryText = findViewById(R.id.dialogCategoryText);
+        dialogTypeText = findViewById(R.id.dialogTypeText);
+        dialogEditButton = findViewById(R.id.dialogEditButton);
+        dialogSaveButton = findViewById(R.id.dialogSaveButton);
+
+        dialogEditSection = findViewById(R.id.dialogEditSection);
+        editAmountInput = findViewById(R.id.editAmountInput);
+        editNoteInput = findViewById(R.id.editNoteInput);
+        catFood = findViewById(R.id.catFood);
+        catTransport = findViewById(R.id.catTransport);
+        catBills = findViewById(R.id.catBills);
+        catShopping = findViewById(R.id.catShopping);
+        catEntertainment = findViewById(R.id.catEntertainment);
+        catSalary = findViewById(R.id.catSalary);
+        editBackToVoiceButton = findViewById(R.id.editBackToVoiceButton);
+        editSaveButton = findViewById(R.id.editSaveButton);
+    }
+
+    private void applyThemeStyling() {
+        SharedPreferences prefs = getSharedPreferences("FinanceWidgetPrefs", Context.MODE_PRIVATE);
+        currentTheme = prefs.getString("theme", "onepiece");
+
+        if ("naruto".equalsIgnoreCase(currentTheme)) {
+            dialogCard.setBackgroundResource(R.drawable.widget_bg_naruto);
+            dialogAvatar.setImageResource(R.drawable.avatar_naruto);
+            dialogAvatar.setBackgroundResource(R.drawable.widget_avatar_bg_naruto);
+            dialogMicGlow.setBackgroundResource(R.drawable.widget_glow_mic_orange);
+            dialogStatusText.setTextColor(0xFFF97316);
+            dialogTitleText.setText("Catatan Suara (Naruto)");
+        } else {
+            dialogCard.setBackgroundResource(R.drawable.widget_bg_onepiece);
+            dialogAvatar.setImageResource(R.drawable.avatar_luffy);
+            dialogAvatar.setBackgroundResource(R.drawable.widget_avatar_bg_onepiece);
+            dialogMicGlow.setBackgroundResource(R.drawable.widget_glow_mic_cyan);
+            dialogStatusText.setTextColor(0xFF38BDF8);
+            dialogTitleText.setText("Catatan Suara (One Piece)");
+        }
+    }
+
+    private void setupListeners() {
+        findViewById(R.id.dialogOutsideOverlay).setOnClickListener(v -> dismissCleanly());
+        dialogCard.setOnClickListener(v -> { /* keep open */ });
+        dialogCloseButton.setOnClickListener(v -> dismissCleanly());
+
+        // Voice mode listeners
         findViewById(R.id.dialogMicButton).setOnClickListener(v -> startListening());
+        dialogSaveButton.setOnClickListener(v -> saveTransactionAndClose());
+        dialogEditButton.setOnClickListener(v -> switchToEditMode());
 
-        findViewById(R.id.dialogSaveButton).setOnClickListener(v -> saveTransactionAndClose());
-
-        findViewById(R.id.dialogEditButton).setOnClickListener(v -> {
-            Intent intent = new Intent(this, MainActivity.class);
-            intent.setAction("ACTION_VOICE_INPUT");
-            intent.setData(Uri.parse("financee://voice"));
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(intent);
-            finish();
+        // Inline edit quick increment listeners
+        findViewById(R.id.chipAdd5k).setOnClickListener(v -> addNominalIncrement(5000));
+        findViewById(R.id.chipAdd10k).setOnClickListener(v -> addNominalIncrement(10000));
+        findViewById(R.id.chipAdd25k).setOnClickListener(v -> addNominalIncrement(25000));
+        findViewById(R.id.chipAdd50k).setOnClickListener(v -> addNominalIncrement(50000));
+        findViewById(R.id.chipResetAmount).setOnClickListener(v -> {
+            currentAmount = 0;
+            editAmountInput.setText("0");
         });
 
-        startListening();
+        // Inline edit category chips
+        catFood.setOnClickListener(v -> selectCategory("food", "Makanan & Minuman", "expense"));
+        catTransport.setOnClickListener(v -> selectCategory("transport", "Transportasi", "expense"));
+        catBills.setOnClickListener(v -> selectCategory("bills", "Tagihan", "expense"));
+        catShopping.setOnClickListener(v -> selectCategory("shopping", "Belanja", "expense"));
+        catEntertainment.setOnClickListener(v -> selectCategory("entertainment", "Hiburan", "expense"));
+        catSalary.setOnClickListener(v -> selectCategory("salary", "Pemasukan", "income"));
+
+        // Inline edit action buttons
+        editBackToVoiceButton.setOnClickListener(v -> switchToVoiceMode());
+        editSaveButton.setOnClickListener(v -> saveFromEditAndClose());
+    }
+
+    private void switchToVoiceMode() {
+        isEditMode = false;
+        dialogVoiceSection.setVisibility(View.VISIBLE);
+        dialogEditSection.setVisibility(View.GONE);
+        dialogStatusText.setText("Mendengarkan... Silakan bicara");
+    }
+
+    private void switchToEditMode() {
+        isEditMode = true;
+        if (speechRecognizer != null) {
+            speechRecognizer.stopListening();
+        }
+        dialogVoiceSection.setVisibility(View.GONE);
+        dialogEditSection.setVisibility(View.VISIBLE);
+        dialogStatusText.setText("Mode Edit Transaksi");
+
+        editAmountInput.setText(String.valueOf(currentAmount > 0 ? currentAmount : 25000));
+        editNoteInput.setText(currentTranscript.isEmpty() ? currentCategoryLabel : currentTranscript);
+        updateCategoryChipsUI();
+    }
+
+    private void addNominalIncrement(long increment) {
+        String raw = editAmountInput.getText().toString().trim();
+        long current = 0;
+        try {
+            current = Long.parseLong(raw);
+        } catch (Exception ignored) {}
+        current += increment;
+        editAmountInput.setText(String.valueOf(current));
+    }
+
+    private void selectCategory(String catKey, String catLabel, String type) {
+        this.currentCategory = catKey;
+        this.currentCategoryLabel = catLabel;
+        this.currentType = type;
+        updateCategoryChipsUI();
+    }
+
+    private void updateCategoryChipsUI() {
+        resetChip(catFood);
+        resetChip(catTransport);
+        resetChip(catBills);
+        resetChip(catShopping);
+        resetChip(catEntertainment);
+        resetChip(catSalary);
+
+        if ("salary".equals(currentCategory)) {
+            highlightChip(catSalary);
+        } else if ("transport".equals(currentCategory)) {
+            highlightChip(catTransport);
+        } else if ("bills".equals(currentCategory)) {
+            highlightChip(catBills);
+        } else if ("shopping".equals(currentCategory)) {
+            highlightChip(catShopping);
+        } else if ("entertainment".equals(currentCategory)) {
+            highlightChip(catEntertainment);
+        } else {
+            highlightChip(catFood);
+        }
+    }
+
+    private void resetChip(TextView tv) {
+        tv.setBackgroundResource(R.drawable.dialog_chip_unselected);
+        tv.setTextColor(0xFFCBD5E1);
+    }
+
+    private void highlightChip(TextView tv) {
+        tv.setBackgroundResource(R.drawable.dialog_chip_selected);
+        tv.setTextColor(0xFFFFFFFF);
     }
 
     private void startListening() {
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
             Toast.makeText(this, "Speech recognition tidak tersedia di perangkat ini.", Toast.LENGTH_SHORT).show();
-            statusText.setText("Fitur suara tidak tersedia.");
+            dialogStatusText.setText("Gunakan mode edit di bawah.");
+            switchToEditMode();
             return;
         }
 
@@ -107,12 +273,12 @@ public class VoiceDialogActivity extends Activity {
         speechRecognizer.setRecognitionListener(new RecognitionListener() {
             @Override
             public void onReadyForSpeech(Bundle params) {
-                statusText.setText("Mendengarkan... Silakan bicara");
+                dialogStatusText.setText("Mendengarkan... Silakan bicara");
             }
 
             @Override
             public void onBeginningOfSpeech() {
-                statusText.setText("Merekam suara...");
+                dialogStatusText.setText("Merekam suara...");
             }
 
             @Override
@@ -123,12 +289,14 @@ public class VoiceDialogActivity extends Activity {
 
             @Override
             public void onEndOfSpeech() {
-                statusText.setText("Memproses ucapan...");
+                dialogStatusText.setText("Memproses kata...");
             }
 
             @Override
             public void onError(int error) {
-                statusText.setText("Ketuk mic untuk coba lagi");
+                if (!isEditMode) {
+                    dialogStatusText.setText("Ketuk mic untuk coba lagi atau tekan Edit");
+                }
             }
 
             @Override
@@ -137,7 +305,11 @@ public class VoiceDialogActivity extends Activity {
                 if (matches != null && !matches.isEmpty()) {
                     processSpeechResult(matches.get(0));
                 }
-                statusText.setText("Selesai. Tekan Simpan");
+                if (currentAmount > 0) {
+                    dialogStatusText.setText("Terdeteksi! Tekan Simpan");
+                } else {
+                    dialogStatusText.setText("Nominal belum terdeteksi. Silakan coba lagi / Edit.");
+                }
             }
 
             @Override
@@ -158,48 +330,57 @@ public class VoiceDialogActivity extends Activity {
     private void processSpeechResult(String text) {
         if (text == null || text.trim().isEmpty()) return;
         currentTranscript = text.trim();
-        transcriptText.setText("\"" + currentTranscript + "\"");
+        dialogTranscriptText.setText("\"" + currentTranscript + "\"");
 
         parseTransaction(currentTranscript);
 
         DecimalFormat formatter = new DecimalFormat("#,###", new DecimalFormatSymbols(Locale.GERMANY));
         String formattedNominal = "Rp " + formatter.format(currentAmount);
-        nominalText.setText(formattedNominal);
+        dialogNominalText.setText(formattedNominal);
 
-        categoryText.setText(currentCategoryLabel);
+        dialogCategoryText.setText(currentCategoryLabel);
 
         if ("income".equals(currentType)) {
-            typeText.setText("Pemasukan");
-            typeText.setTextColor(0xFF4ADE80);
-            nominalText.setTextColor(0xFF4ADE80);
+            dialogTypeText.setText("Pemasukan");
+            dialogTypeText.setTextColor(0xFF4ADE80);
+            dialogNominalText.setTextColor(0xFF4ADE80);
         } else {
-            typeText.setText("Pengeluaran");
-            typeText.setTextColor(0xFFF87171);
-            nominalText.setTextColor(0xFF34D399);
+            dialogTypeText.setText("Pengeluaran");
+            dialogTypeText.setTextColor(0xFFF87171);
+            dialogNominalText.setTextColor(0xFF34D399);
         }
     }
 
     private void parseTransaction(String input) {
         String lower = input.toLowerCase();
 
-        // 1. Determine Type
-        if (lower.contains("gaji") || lower.contains("dapat") || lower.contains("terima") || lower.contains("bonus") || lower.contains("pemasukan")) {
+        // 1. Determine Type & Category
+        if (lower.contains("gaji") || lower.contains("dapat") || lower.contains("terima") ||
+            lower.contains("bonus") || lower.contains("pemasukan") || lower.contains("transferan") || lower.contains("kiriman")) {
             currentType = "income";
             currentCategory = "salary";
             currentCategoryLabel = "Gaji / Pemasukan";
         } else {
             currentType = "expense";
-            // Determine Category
-            if (lower.contains("bensin") || lower.contains("pertalite") || lower.contains("pertamax") || lower.contains("gojek") || lower.contains("grab") || lower.contains("ojol") || lower.contains("parkir") || lower.contains("tol")) {
+            if (lower.contains("bensin") || lower.contains("pertalite") || lower.contains("pertamax") ||
+                lower.contains("gojek") || lower.contains("grab") || lower.contains("ojol") ||
+                lower.contains("parkir") || lower.contains("tol") || lower.contains("angkot") ||
+                lower.contains("kereta") || lower.contains("bus") || lower.contains("ongkir")) {
                 currentCategory = "transport";
                 currentCategoryLabel = "Transportasi";
-            } else if (lower.contains("pulsa") || lower.contains("listrik") || lower.contains("token") || lower.contains("wifi") || lower.contains("pdam") || lower.contains("air")) {
+            } else if (lower.contains("pulsa") || lower.contains("listrik") || lower.contains("token") ||
+                       lower.contains("wifi") || lower.contains("pdam") || lower.contains("air") ||
+                       lower.contains("bpjs") || lower.contains("kuota")) {
                 currentCategory = "bills";
                 currentCategoryLabel = "Tagihan";
-            } else if (lower.contains("baju") || lower.contains("sepatu") || lower.contains("celana") || lower.contains("shopee") || lower.contains("tokopedia") || lower.contains("beli")) {
+            } else if (lower.contains("baju") || lower.contains("sepatu") || lower.contains("celana") ||
+                       lower.contains("shopee") || lower.contains("tokopedia") || lower.contains("beli") ||
+                       lower.contains("lazada") || lower.contains("belanja") || lower.contains("skincare")) {
                 currentCategory = "shopping";
                 currentCategoryLabel = "Belanja";
-            } else if (lower.contains("bioskop") || lower.contains("nonton") || lower.contains("game") || lower.contains("top up") || lower.contains("karaoke")) {
+            } else if (lower.contains("bioskop") || lower.contains("nonton") || lower.contains("game") ||
+                       lower.contains("top up") || lower.contains("diamond") || lower.contains("steam") ||
+                       lower.contains("liburan") || lower.contains("karaoke")) {
                 currentCategory = "entertainment";
                 currentCategoryLabel = "Hiburan";
             } else {
@@ -208,51 +389,175 @@ public class VoiceDialogActivity extends Activity {
             }
         }
 
-        // 2. Extract Amount
-        currentAmount = extractAmount(lower);
+        // 2. Extract Amount using comprehensive parser
+        currentAmount = extractIndonesianAmount(lower);
     }
 
-    private long extractAmount(String text) {
-        // Pattern 1: e.g. "50k", "50 k", "25.000", "25000", "50rb", "50 ribu", "2 juta"
-        Pattern pJuta = Pattern.compile("(\\d+(?:[.,]\\d+)?)\\s*(?:juta|jt)");
+    public static long extractIndonesianAmount(String input) {
+        if (input == null || input.trim().isEmpty()) return 0;
+        String text = input.toLowerCase().trim();
+
+        // Regex Pattern 1: e.g. "1.5 juta", "2 juta", "1 jt"
+        Pattern pJuta = Pattern.compile("(\\d+(?:[.,]\\d+)?)\\s*(?:juta|jt|million)\\b");
         Matcher mJuta = pJuta.matcher(text);
         if (mJuta.find()) {
-            double val = Double.parseDouble(mJuta.group(1).replace(",", "."));
-            return (long) (val * 1000000);
-        }
-
-        Pattern pRibu = Pattern.compile("(\\d+(?:[.,]\\d+)?)\\s*(?:ribu|rb|k\\b)");
-        Matcher mRibu = pRibu.matcher(text);
-        if (mRibu.find()) {
-            double val = Double.parseDouble(mRibu.group(1).replace(",", "."));
-            return (long) (val * 1000);
-        }
-
-        Pattern pPlain = Pattern.compile("\\b(\\d{4,9})\\b");
-        Matcher mPlain = pPlain.matcher(text.replace(".", "").replace(",", ""));
-        if (mPlain.find()) {
             try {
-                return Long.parseLong(mPlain.group(1));
+                double val = Double.parseDouble(mJuta.group(1).replace(",", "."));
+                return (long) (val * 1000000);
             } catch (Exception ignored) {}
         }
 
-        // Pattern for slang words
-        if (text.contains("seratus ribu")) return 100000;
-        if (text.contains("lima puluh ribu") || text.contains("gocap")) return 50000;
-        if (text.contains("dua puluh lima ribu") || text.contains("cepek")) return 25000;
-        if (text.contains("dua puluh ribu")) return 20000;
-        if (text.contains("sepuluh ribu") || text.contains("ceban")) return 10000;
-        if (text.contains("lima ribu")) return 5000;
+        // Regex Pattern 2: e.g. "10 ribu", "30rb", "25k", "50 rebu"
+        Pattern pRibu = Pattern.compile("(\\d+(?:[.,]\\d+)?)\\s*(?:ribu|rb|rebu|k\\b|thousand)");
+        Matcher mRibu = pRibu.matcher(text);
+        if (mRibu.find()) {
+            try {
+                double val = Double.parseDouble(mRibu.group(1).replace(",", "."));
+                return (long) (val * 1000);
+            } catch (Exception ignored) {}
+        }
 
-        return currentAmount > 0 ? currentAmount : 25000; // default reasonable placeholder
+        // Regex Pattern 3: Plain numbers e.g. "25000", "25.000", "10000", "30000"
+        Pattern pPlain = Pattern.compile("\\b(\\d{1,3}(?:[.,]\\d{3})+|\\d{4,9})\\b");
+        Matcher mPlain = pPlain.matcher(text);
+        if (mPlain.find()) {
+            try {
+                return Long.parseLong(mPlain.group(1).replace(".", "").replace(",", ""));
+            } catch (Exception ignored) {}
+        }
+
+        // Normalize Indonesian Slang & Halves before token evaluation
+        String normalized = text
+            .replaceAll("\\bcepek\\s*(?:ceng|ribu|rb)\\b", "100 ribu")
+            .replaceAll("\\bgopek\\s*(?:ceng|ribu|rb)\\b", "500 ribu")
+            .replaceAll("\\bgoceng\\b", "5 ribu")
+            .replaceAll("\\bceban\\b", "10 ribu")
+            .replaceAll("\\bgoban\\b", "50 ribu")
+            .replaceAll("\\bseceng\\b", "1 ribu")
+            .replaceAll("\\bnoceng\\b", "2 ribu")
+            .replaceAll("\\bnoban\\b", "20 ribu")
+            .replaceAll("\\bcapceng\\b", "10 ribu")
+            .replaceAll("\\bsetengah\\s+juta\\b", "500 ribu")
+            .replaceAll("\\bsetengah\\s+ribu\\b", "500");
+
+        // Parse token by token for Indonesian spoken numbers (e.g. "sepuluh ribu", "tiga puluh ribu", "dua puluh lima ribu")
+        String[] tokens = normalized.replaceAll("[^a-z0-9\\s]", " ").trim().split("\\s+");
+        long total = 0;
+        long current = 0;
+        boolean seen = false;
+
+        for (String t : tokens) {
+            if (t.equals("dan")) continue;
+
+            if (t.matches("^\\d+$")) {
+                try {
+                    long num = Long.parseLong(t);
+                    current += num;
+                    seen = true;
+                    continue;
+                } catch (Exception ignored) {}
+            }
+
+            if (t.equals("nol")) { seen = true; continue; }
+            if (t.equals("satu")) { current += 1; seen = true; continue; }
+            if (t.equals("dua")) { current += 2; seen = true; continue; }
+            if (t.equals("tiga")) { current += 3; seen = true; continue; }
+            if (t.equals("empat")) { current += 4; seen = true; continue; }
+            if (t.equals("lima")) { current += 5; seen = true; continue; }
+            if (t.equals("enam")) { current += 6; seen = true; continue; }
+            if (t.equals("tujuh")) { current += 7; seen = true; continue; }
+            if (t.equals("delapan")) { current += 8; seen = true; continue; }
+            if (t.equals("sembilan")) { current += 9; seen = true; continue; }
+
+            if (t.equals("sepuluh")) { current += 10; seen = true; continue; }
+            if (t.equals("sebelas")) { current += 11; seen = true; continue; }
+            if (t.equals("belas")) {
+                if (current == 0) current = 10;
+                else current += 10;
+                seen = true;
+                continue;
+            }
+
+            if (t.equals("puluh")) {
+                current = (current == 0 ? 1 : current) * 10;
+                seen = true;
+                continue;
+            }
+
+            if (t.equals("seratus")) { current += 100; seen = true; continue; }
+            if (t.equals("ratus")) {
+                current = (current == 0 ? 1 : current) * 100;
+                seen = true;
+                continue;
+            }
+
+            if (t.equals("seribu")) {
+                total += 1000;
+                current = 0;
+                seen = true;
+                continue;
+            }
+            if (t.equals("ribu") || t.equals("rb") || t.equals("rebu") || t.equals("k")) {
+                long base = current == 0 ? 1 : current;
+                total += base * 1000;
+                current = 0;
+                seen = true;
+                continue;
+            }
+
+            if (t.equals("sejuta")) {
+                total += 1000000;
+                current = 0;
+                seen = true;
+                continue;
+            }
+            if (t.equals("juta") || t.equals("jt")) {
+                long base = current == 0 ? 1 : current;
+                total += base * 1000000;
+                current = 0;
+                seen = true;
+                continue;
+            }
+        }
+
+        long calculated = total + current;
+        if (seen && calculated > 0) {
+            return calculated;
+        }
+
+        return 0; // ZERO fallback. Never assume 25000!
+    }
+
+    private void saveFromEditAndClose() {
+        String amountStr = editAmountInput.getText().toString().trim();
+        if (amountStr.isEmpty()) {
+            Toast.makeText(this, "Silakan masukkan nominal transaksi.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            currentAmount = Long.parseLong(amountStr);
+        } catch (Exception e) {
+            Toast.makeText(this, "Nominal angka tidak valid.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String note = editNoteInput.getText().toString().trim();
+        currentTranscript = note.isEmpty() ? currentCategoryLabel : note;
+
+        executeSaveAndDismiss();
     }
 
     private void saveTransactionAndClose() {
         if (currentAmount <= 0) {
-            Toast.makeText(this, "Nominal belum terdeteksi. Silakan coba bicara lagi.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Nominal belum terdeteksi. Tekan Edit untuk isi nominal.", Toast.LENGTH_SHORT).show();
+            switchToEditMode();
             return;
         }
+        executeSaveAndDismiss();
+    }
 
+    private void executeSaveAndDismiss() {
         try {
             SharedPreferences prefs = getSharedPreferences("FinanceWidgetPrefs", Context.MODE_PRIVATE);
 
@@ -265,7 +570,7 @@ public class VoiceDialogActivity extends Activity {
             tx.put("category", currentCategory);
             tx.put("date", new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date(now)));
             tx.put("description", currentTranscript.isEmpty() ? currentCategoryLabel : currentTranscript);
-            tx.put("method", "voice");
+            tx.put("method", isEditMode ? "widget_edit" : "widget_voice");
 
             // 2. Append to pending queue in SharedPreferences
             String pendingJson = prefs.getString("pendingTransactions", "[]");
@@ -301,14 +606,27 @@ public class VoiceDialogActivity extends Activity {
             Toast.makeText(this, "Gagal menyimpan: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
 
-        finish();
+        dismissCleanly();
+    }
+
+    private void dismissCleanly() {
+        if (speechRecognizer != null) {
+            try {
+                speechRecognizer.destroy();
+            } catch (Exception ignored) {}
+            speechRecognizer = null;
+        }
+        finishAndRemoveTask();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         if (speechRecognizer != null) {
-            speechRecognizer.destroy();
+            try {
+                speechRecognizer.destroy();
+            } catch (Exception ignored) {}
+            speechRecognizer = null;
         }
     }
 }

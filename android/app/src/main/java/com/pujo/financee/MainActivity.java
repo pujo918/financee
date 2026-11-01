@@ -3,6 +3,8 @@ package com.pujo.financee;
 import android.Manifest;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -67,6 +69,7 @@ public class MainActivity extends BridgeActivity {
         super.onResume();
         checkVoiceIntent(getIntent());
         syncPendingWidgetTransactions();
+        syncWidgetTheme();
     }
 
     @Override
@@ -75,6 +78,17 @@ public class MainActivity extends BridgeActivity {
         setIntent(intent);
         checkVoiceIntent(intent);
         syncPendingWidgetTransactions();
+        syncWidgetTheme();
+    }
+
+    private void syncWidgetTheme() {
+        if (bridge == null || bridge.getWebView() == null) return;
+        bridge.getWebView().postDelayed(() -> {
+            bridge.getWebView().evaluateJavascript(
+                "if (typeof window.syncThemeToAndroidWidget === 'function') { window.syncThemeToAndroidWidget(); }",
+                null
+            );
+        }, 400);
     }
 
     private void syncPendingWidgetTransactions() {
@@ -154,8 +168,27 @@ public class MainActivity extends BridgeActivity {
         public void setTheme(String theme) {
             SharedPreferences prefs = context.getSharedPreferences("FinanceWidgetPrefs", Context.MODE_PRIVATE);
             prefs.edit().putString("theme", theme).apply();
+
             FinanceWidgetProvider.updateAllWidgets(context);
             FinanceVoiceWidgetProvider.updateAllWidgets(context);
+
+            try {
+                AppWidgetManager mgr = AppWidgetManager.getInstance(context);
+                int[] voiceIds = mgr.getAppWidgetIds(new ComponentName(context, FinanceVoiceWidgetProvider.class));
+                if (voiceIds != null && voiceIds.length > 0) {
+                    Intent intent = new Intent(context, FinanceVoiceWidgetProvider.class);
+                    intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+                    intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, voiceIds);
+                    context.sendBroadcast(intent);
+                }
+                int[] smallIds = mgr.getAppWidgetIds(new ComponentName(context, FinanceWidgetProvider.class));
+                if (smallIds != null && smallIds.length > 0) {
+                    Intent intent = new Intent(context, FinanceWidgetProvider.class);
+                    intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+                    intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, smallIds);
+                    context.sendBroadcast(intent);
+                }
+            } catch (Exception ignored) {}
         }
 
         @JavascriptInterface
