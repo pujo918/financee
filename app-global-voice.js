@@ -239,15 +239,52 @@ function initVoiceRecognition() {
     };
 
     recognition.onerror = (event) => {
+        if (event.error === 'aborted') {
+            stopVoiceInput();
+            return;
+        }
+
         const lang = localStorage.getItem('voiceLang') || currentLang || 'id-ID';
         const isEn = lang.startsWith('en');
-        const msg = event.error === 'no-speech'
-            ? (isEn ? 'No speech heard.' : 'Tidak terdengar suara.')
-            : (isEn ? 'Could not understand voice. Please try again.' : 'Tidak dapat memahami suara. Coba lagi.');
+
+        let msg = '';
+        if (event.error === 'no-speech') {
+            msg = isEn 
+                ? 'No speech detected. Please speak closer to microphone.' 
+                : 'Tidak terdengar suara. Silakan bicara lebih dekat ke mikrofon.';
+        } else if (event.error === 'network') {
+            msg = isEn 
+                ? 'Koneksi jaringan terganggu ke server suara. Coba cek internet Anda.' 
+                : 'Koneksi jaringan terganggu ke server suara Google. Cek internet Anda.';
+        } else if (event.error === 'not-allowed') {
+            msg = isEn 
+                ? 'Microphone permission denied. Allow mic access in browser settings.' 
+                : 'Izin mikrofon belum diberikan. Izinkan akses mic di pengaturan browser.';
+        } else if (event.error === 'audio-capture') {
+            msg = isEn 
+                ? 'Microphone is busy or not detected. Close other mic apps.' 
+                : 'Mikrofon sedang dipakai aplikasi lain (telepon/rekaman) atau tidak terdeteksi.';
+        } else {
+            msg = isEn 
+                ? 'Could not understand voice clearly. Please try again.' 
+                : 'Suara belum tertangkap jelas. Silakan coba lagi.';
+        }
+
         const s = document.getElementById('voiceStatus');
         const r = document.getElementById('voiceResult');
         if (s) s.textContent = msg;
-        if (r) r.innerHTML = `<div style="color:var(--warning);">[!] ${msg}</div>`;
+        if (r) {
+            r.innerHTML = `
+                <div style="background:rgba(239,68,68,0.22);border:1px solid rgba(239,68,68,0.45);padding:10px 14px;border-radius:8px;color:#ffdddd;font-size:0.86rem;line-height:1.45;">
+                    [!] ${msg}
+                </div>
+            `;
+            setTimeout(() => {
+                if (r && r.innerHTML.includes('[!]')) {
+                    r.innerHTML = '';
+                }
+            }, 5000);
+        }
         stopVoiceInput();
     };
 
