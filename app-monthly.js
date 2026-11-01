@@ -32,6 +32,10 @@ window.syncPendingTransactionsFromWidget = function() {
                 if (!existing.some(t => t.id === p.id)) {
                     existing.unshift(p);
                     added++;
+                    // Fallback sync to Google Sheet if not marked as already synced by native widget
+                    if (!p.syncedToSheet && typeof window.sendToSheet === 'function' && typeof window.buildSheetPayload === 'function') {
+                        window.sendToSheet(window.buildSheetPayload(p));
+                    }
                 }
             });
             if (added > 0) {
@@ -49,6 +53,12 @@ window.syncPendingTransactionsFromWidget = function() {
         console.error('Failed to sync widget transactions:', e);
     }
 };
+
+window.addEventListener('focus', function() {
+    if (typeof window.syncPendingTransactionsFromWidget === 'function') {
+        window.syncPendingTransactionsFromWidget();
+    }
+});
 
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', function() {

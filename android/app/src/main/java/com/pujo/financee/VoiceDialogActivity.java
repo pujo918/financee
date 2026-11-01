@@ -19,6 +19,10 @@ import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
@@ -661,6 +665,8 @@ public class VoiceDialogActivity extends Activity {
         executeSaveAndDismiss();
     }
 
+    private static final String SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyqnT0jfZwiKwQzM4NLM-zOUEIzL_9ZlsDg4_Bg8tLk9334A_eMIfAHgHG8IHUPSwzbRA/exec";
+
     private void executeSaveAndDismiss() {
         try {
             SharedPreferences prefs = getSharedPreferences("FinanceWidgetPrefs", Context.MODE_PRIVATE);
@@ -668,13 +674,18 @@ public class VoiceDialogActivity extends Activity {
             // 1. Build Transaction JSON
             JSONObject tx = new JSONObject();
             long now = System.currentTimeMillis();
+            String dateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date(now));
+            String monthStr = dateStr.length() >= 7 ? dateStr.substring(0, 7) : "";
+            String desc = currentTranscript.isEmpty() ? currentCategoryLabel : currentTranscript;
+
             tx.put("id", now);
             tx.put("type", currentType);
             tx.put("amount", currentAmount);
             tx.put("category", currentCategory);
-            tx.put("date", new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date(now)));
-            tx.put("description", currentTranscript.isEmpty() ? currentCategoryLabel : currentTranscript);
+            tx.put("date", dateStr);
+            tx.put("description", desc);
             tx.put("method", isEditMode ? "widget_edit" : "widget_voice");
+            tx.put("syncedToSheet", false);
 
             // 2. Append to pending queue in SharedPreferences
             String pendingJson = prefs.getString("pendingTransactions", "[]");
@@ -687,7 +698,7 @@ public class VoiceDialogActivity extends Activity {
 
             prefs.edit()
                 .putString("pendingTransactions", pending.toString())
-                .putString("lastTranscript", currentTranscript.isEmpty() ? currentCategoryLabel : currentTranscript)
+                .putString("lastTranscript", desc)
                 .putString("lastNominal", nominalFormatted)
                 .putString("lastCategory", currentCategoryLabel)
                 .putString("lastType", "income".equals(currentType) ? "Pemasukan" : "Pengeluaran")
@@ -697,6 +708,9 @@ public class VoiceDialogActivity extends Activity {
             // 4. Trigger Widget Update for both 4x2 and 4x1
             FinanceWidgetProvider.updateAllWidgets(this);
             FinanceVoiceWidgetProvider.updateAllWidgets(this);
+
+            // 5. DIRECT BACKGROUND SYNC TO GOOGLE SPREADSHEET
+            syncDirectlyToGoogleSheet(now, dateStr, monthStr, currentType, currentCategory, desc, currentAmount, isEditMode ? "widget_edit" : "widget_voice");
 
             // Haptic vibration feedback
             try {
@@ -711,6 +725,85 @@ public class VoiceDialogActivity extends Activity {
         }
 
         dismissCleanly();
+    }
+
+    private void syncDirectlyToGoogleSheet(long id, String date, String month, String type, String category, String description, long amount, String source) {
+        new Thread(() -> {
+            HttpURLConnection conn = null;
+            try {
+                JSONObject payload = new JSONObject();
+                payload.put("action", "add");
+                payload.put("id", id);
+                payload.put("date", date);
+                payload.put("month", month);
+                payload.put("type", type);
+                payload.put("category", category);
+                payload.put("description", description);
+                payload.put("amount", amount);
+                payload.put("source", source);
+
+                byte[] postData = payload.toString().getBytes(StandardCharsets.UTF_8);
+
+                URL url = new URL(SHEET_WEBAPP_URL);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "text/plain;charset=utf-8");
+                conn.setRequestProperty("Content-Length", String.valueOf(postData.length));
+                conn.setDoOutput(true);
+                conn.setConnectTimeout(15000);
+                conn.setReadTimeout(15000);
+                conn.setInstanceFollowRedirects(true);
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(postData);
+                    os.flush();
+                }
+
+                int responseCode = conn.getResponseCode();
+                android.util.Log.d("VoiceDialog", "Google Sheet sync response code: " + responseCode);
+
+                if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == 307) {
+                    String redirectUrl = conn.getHeaderField("Location");
+                    if (redirectUrl != null) {
+                        HttpURLConnection redirConn = (HttpURLConnection) new URL(redirectUrl).openConnection();
+                        redirConn.setRequestMethod("GET");
+                        redirConn.setConnectTimeout(10000);
+                        redirConn.setReadTimeout(10000);
+                        redirConn.getResponseCode();
+                        redirConn.disconnect();
+                    }
+                }
+
+                if (responseCode >= 200 && responseCode < 400) {
+                    markTransactionAsSyncedInPrefs(id);
+                }
+            } catch (Exception e) {
+                android.util.Log.e("VoiceDialog", "Failed to sync to Google Sheet from widget", e);
+            } finally {
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
+        }).start();
+    }
+
+    private void markTransactionAsSyncedInPrefs(long id) {
+        try {
+            SharedPreferences prefs = getSharedPreferences("FinanceWidgetPrefs", Context.MODE_PRIVATE);
+            String pendingJson = prefs.getString("pendingTransactions", "[]");
+            JSONArray pending = new JSONArray(pendingJson);
+            boolean updated = false;
+            for (int i = 0; i < pending.length(); i++) {
+                JSONObject obj = pending.getJSONObject(i);
+                if (obj.optLong("id") == id) {
+                    obj.put("syncedToSheet", true);
+                    updated = true;
+                }
+            }
+            if (updated) {
+                prefs.edit().putString("pendingTransactions", pending.toString()).apply();
+            }
+        } catch (Exception ignored) {}
     }
 
     private void dismissCleanly() {
