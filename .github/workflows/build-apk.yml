@@ -5,6 +5,9 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build Android APK
@@ -46,14 +49,23 @@ jobs:
         run: |
           set -o pipefail
           cd android
-          ./gradlew assembleDebug --stacktrace --no-daemon 2>&1 | tee ../gradle.log
+          ./gradlew assembleDebug --stacktrace --no-daemon 2>&1 | tee ../gradle.log || {
+            ERR=$(tail -n 25 ../gradle.log | tr '\n' ' ' | sed 's/"//g')
+            echo "::error title=Gradle Failure::$ERR"
+            exit 1
+          }
 
-      - name: Upload Build Log on Failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-failure-log
-          path: gradle.log
+      - name: Publish Build Log Branch
+        if: always()
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B build-logs
+          cp gradle.log build.log || true
+          git add -f build.log
+          git commit -m "chore: save build log [skip ci]" || true
+          git push -f origin build-logs || true
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
