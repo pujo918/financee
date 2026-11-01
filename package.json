@@ -1,0 +1,27 @@
+{
+  "name": "finance",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app-calculator.js",
+  "scripts": {
+    "build": "node build-assets.js",
+    "cap:sync": "npm run build && npx cap sync android"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pujo918/financee.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/pujo918/financee/issues"
+  },
+  "homepage": "https://github.com/pujo918/financee#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0"
+  }
+}

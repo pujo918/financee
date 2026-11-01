@@ -461,6 +461,14 @@ function updateMonthlyDashboard() {
     const monthlySavingRateEl = document.getElementById('monthlySavingRate');
     if (monthlySavingRateEl) monthlySavingRateEl.textContent = `${savingRate.toFixed(1)}%`;
 
+    // Sync with Android Home Screen Widget if running inside APK
+    if (window.AndroidWidget && typeof window.AndroidWidget.updateWidget === 'function') {
+        const balStr = (net >= 0 ? 'Rp ' : '-Rp ') + Math.abs(net).toLocaleString('id-ID');
+        const incStr = '+Rp ' + income.toLocaleString('id-ID');
+        const expStr = '-Rp ' + expense.toLocaleString('id-ID');
+        window.AndroidWidget.updateWidget(balStr, incStr, expStr);
+    }
+
     const indicator = document.getElementById('monthlyHealthIndicator');
     if (net >= 0) {
         indicator.className = 'health-indicator health-safe';
