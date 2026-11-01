@@ -52,4 +52,4 @@ function copyDirSync(src, dest) {
 // Copy images
 copyDirSync(path.join(srcDir, 'images'), path.join(outDir, 'images'));
 
-console.log('✓ Assets successfully prepared in www/ folder!');
+console.log('[SUCCESS] Assets successfully prepared in www/ folder!');

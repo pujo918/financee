@@ -5,7 +5,7 @@
   "main": "app-calculator.js",
   "scripts": {
     "build": "node build-assets.js",
-    "cap:sync": "npm run build && npx cap sync android"
+    "cap:sync": "node build-assets.js && cap sync android"
   },
   "repository": {
     "type": "git",
