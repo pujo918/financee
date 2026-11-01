@@ -1,14 +1,40 @@
 apply plugin: 'com.android.application'
 
+def getAutoVersionCode() {
+    def runNumber = System.getenv("GITHUB_RUN_NUMBER")
+    if (runNumber != null && runNumber.isInteger()) {
+        return 100 + runNumber.toInteger()
+    }
+    return (int) (System.currentTimeMillis() / 100000)
+}
+
+def getAutoVersionName() {
+    def runNumber = System.getenv("GITHUB_RUN_NUMBER")
+    if (runNumber != null && !runNumber.isEmpty()) {
+        return "1.0." + runNumber
+    }
+    return "1.0.local"
+}
+
 android {
     namespace = "com.pujo.financee"
     compileSdk = rootProject.ext.compileSdkVersion
+
+    signingConfigs {
+        appSign {
+            storeFile file("finance_release.keystore")
+            storePassword "finance123"
+            keyAlias "finance"
+            keyPassword "finance123"
+        }
+    }
+
     defaultConfig {
         applicationId "com.pujo.financee"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode getAutoVersionCode()
+        versionName getAutoVersionName()
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -17,7 +43,11 @@ android {
         }
     }
     buildTypes {
+        debug {
+            signingConfig signingConfigs.appSign
+        }
         release {
+            signingConfig signingConfigs.appSign
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

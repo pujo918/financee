@@ -125,7 +125,7 @@ class BilingualParser {
             'income', 'got', 'receive', 'received', 'earn', 'earned',
             'salary', 'wage', 'paycheck', 'payroll', 'got paid', 'allowance', 'freelance', 'bonus', 'thr',
             'terima', 'dapat', 'dapet', 'nemu', 'uang masuk', 'gaji', 'gajian', 'bayaran',
-            'honor', 'kiriman', 'terima transfer', 'dapat transfer', 'komisi', 'commission', 'profit', 'cuan',
+            'honor', 'kiriman', 'terima transfer', 'dapat transfer', 'ditransfer', 'transfer masuk', 'dikirimin', 'dikirimi', 'dikasih uang', 'komisi', 'commission', 'profit', 'cuan',
             'dividen', 'dividend', 'cashback', 'reimburse', 'reimbursement', 'refund', 'uang jajan dari'
         ];
 
@@ -712,7 +712,7 @@ class BilingualParser {
             'gaji', 'gajian', 'salary', 'wage', 'paycheck', 'payroll', 'thr',
             'dividen', 'dividend', 'profit', 'cuan', 'komisi', 'commission',
             'freelance', 'honor', 'bonus', 'uang masuk', 'allowance', 'stipend',
-            'uang saku', 'uang jajan', 'uang makan'
+            'uang saku', 'uang jajan', 'uang makan', 'ditransfer', 'transfer masuk', 'kiriman'
         ];
 
         for (const kw of strongIncomeWords) {

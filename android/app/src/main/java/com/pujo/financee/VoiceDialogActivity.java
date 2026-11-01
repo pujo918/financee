@@ -57,7 +57,10 @@ public class VoiceDialogActivity extends Activity {
     private TextView catTransport;
     private TextView catBills;
     private TextView catShopping;
+    private TextView catStudy;
+    private TextView catHealth;
     private TextView catEntertainment;
+    private TextView catOther;
     private TextView catSalary;
     private TextView editBackToVoiceButton;
     private View editSaveButton;
@@ -121,7 +124,10 @@ public class VoiceDialogActivity extends Activity {
         catTransport = findViewById(R.id.catTransport);
         catBills = findViewById(R.id.catBills);
         catShopping = findViewById(R.id.catShopping);
+        catStudy = findViewById(R.id.catStudy);
+        catHealth = findViewById(R.id.catHealth);
         catEntertainment = findViewById(R.id.catEntertainment);
+        catOther = findViewById(R.id.catOther);
         catSalary = findViewById(R.id.catSalary);
         editBackToVoiceButton = findViewById(R.id.editBackToVoiceButton);
         editSaveButton = findViewById(R.id.editSaveButton);
@@ -171,11 +177,14 @@ public class VoiceDialogActivity extends Activity {
         });
 
         // Inline edit category chips
-        catFood.setOnClickListener(v -> selectCategory("food", "Makanan & Minuman", "expense"));
-        catTransport.setOnClickListener(v -> selectCategory("transport", "Transportasi", "expense"));
+        catFood.setOnClickListener(v -> selectCategory("food", "Makanan", "expense"));
+        catTransport.setOnClickListener(v -> selectCategory("transport", "Transport", "expense"));
         catBills.setOnClickListener(v -> selectCategory("bills", "Tagihan", "expense"));
         catShopping.setOnClickListener(v -> selectCategory("shopping", "Belanja", "expense"));
+        catStudy.setOnClickListener(v -> selectCategory("study", "Pendidikan", "expense"));
+        catHealth.setOnClickListener(v -> selectCategory("health", "Kesehatan", "expense"));
         catEntertainment.setOnClickListener(v -> selectCategory("entertainment", "Hiburan", "expense"));
+        catOther.setOnClickListener(v -> selectCategory("other", "Lainnya", "expense"));
         catSalary.setOnClickListener(v -> selectCategory("salary", "Pemasukan", "income"));
 
         // Inline edit action buttons
@@ -226,7 +235,10 @@ public class VoiceDialogActivity extends Activity {
         resetChip(catTransport);
         resetChip(catBills);
         resetChip(catShopping);
+        resetChip(catStudy);
+        resetChip(catHealth);
         resetChip(catEntertainment);
+        resetChip(catOther);
         resetChip(catSalary);
 
         if ("salary".equals(currentCategory)) {
@@ -237,8 +249,14 @@ public class VoiceDialogActivity extends Activity {
             highlightChip(catBills);
         } else if ("shopping".equals(currentCategory)) {
             highlightChip(catShopping);
+        } else if ("study".equals(currentCategory)) {
+            highlightChip(catStudy);
+        } else if ("health".equals(currentCategory)) {
+            highlightChip(catHealth);
         } else if ("entertainment".equals(currentCategory)) {
             highlightChip(catEntertainment);
+        } else if ("other".equals(currentCategory)) {
+            highlightChip(catOther);
         } else {
             highlightChip(catFood);
         }
@@ -353,23 +371,37 @@ public class VoiceDialogActivity extends Activity {
         }
     }
 
+    private boolean matchesKw(String text, String kw) {
+        if (text == null || kw == null || kw.trim().isEmpty()) return false;
+        String k = kw.trim().toLowerCase();
+        if (k.contains(" ")) {
+            return text.contains(k);
+        }
+        Pattern p = Pattern.compile("\\b" + Pattern.quote(k) + "\\b", Pattern.CASE_INSENSITIVE);
+        return p.matcher(text).find();
+    }
+
+    private boolean matchesAny(String text, String... keywords) {
+        for (String kw : keywords) {
+            if (matchesKw(text, kw)) return true;
+        }
+        return false;
+    }
+
     private void parseTransaction(String input) {
         String lower = input.toLowerCase();
 
-        // 1. Determine Type & Category
-        boolean isIncome = lower.contains("ditransfer") ||
-                           lower.contains("dapat transfer") ||
-                           lower.contains("terima transfer") ||
-                           lower.contains("transfer masuk") ||
-                           (lower.contains("transfer") && !lower.contains("transfer ke") && !lower.contains("transfer buat") && !lower.contains("transfer untuk")) ||
-                           lower.contains("gaji") || lower.contains("gajian") || lower.contains("salary") ||
-                           lower.contains("bonus") || lower.contains("pemasukan") || lower.contains("pendapatan") ||
-                           lower.contains("dikirimi") || lower.contains("dikirimin") || lower.contains("kiriman") ||
-                           lower.contains("dapat uang") || lower.contains("dapet uang") || lower.contains("dikasih uang") ||
-                           lower.contains("dikasih") || lower.contains("terima uang") || lower.contains("uang masuk") ||
-                           lower.contains("komisi") || lower.contains("cair") || lower.contains("thr") ||
-                           lower.contains("angpao") || lower.contains("cashback") || lower.contains("refund") ||
-                           lower.contains("upah") || lower.contains("honor");
+        // 1. Determine Type & Category (1:1 with web app voice-parser.js)
+        boolean isIncome = matchesAny(lower,
+            "ditransfer", "dapat transfer", "terima transfer", "transfer masuk",
+            "dikirimi", "dikirimin", "kiriman", "dapat uang", "dapet uang", "dikasih uang",
+            "uang masuk", "komisi", "cair", "thr", "angpao", "cashback", "refund",
+            "gaji", "gajian", "salary", "bonus", "pemasukan", "pendapatan",
+            "upah", "honor", "proyek", "freelance"
+        );
+        if (!isIncome && lower.contains("transfer") && !lower.contains("transfer ke") && !lower.contains("transfer buat") && !lower.contains("transfer untuk") && !lower.contains("transfer bayar")) {
+            isIncome = true;
+        }
 
         if (isIncome) {
             currentType = "income";
@@ -378,55 +410,81 @@ public class VoiceDialogActivity extends Activity {
         } else {
             currentType = "expense";
 
-            // CHECK FOOD FIRST (Food & Drink is the primary daily transaction)
-            if (lower.contains("makan") || lower.contains("minum") || lower.contains("roti") ||
-                lower.contains("bakso") || lower.contains("mie") || lower.contains("nasi") ||
-                lower.contains("ayam") || lower.contains("sate") || lower.contains("soto") ||
-                lower.contains("kopi") || lower.contains("coffee") || lower.contains("es teh") ||
-                lower.contains("teh") || lower.contains("snack") || lower.contains("cemilan") ||
-                lower.contains("jajan") || lower.contains("cafe") || lower.contains("kafe") ||
-                lower.contains("warung") || lower.contains("warkop") || lower.contains("indomie") ||
-                lower.contains("burger") || lower.contains("pizza") || lower.contains("martabak") ||
-                lower.contains("gorengan") || lower.contains("sarapan") || lower.contains("siang") ||
-                lower.contains("jus") || lower.contains("buah") || lower.contains("sayur") ||
-                lower.contains("daging") || lower.contains("telur") || lower.contains("beras")) {
-                currentCategory = "food";
-                currentCategoryLabel = "Makanan & Minuman";
-            } else if (lower.contains("bensin") || lower.contains("pertalite") || lower.contains("pertamax") ||
-                       lower.contains("solar") || lower.contains("gojek") || lower.contains("gocar") ||
-                       lower.contains("grab") || lower.contains("ojol") || lower.contains("ojek") ||
-                       lower.contains("maxim") || lower.contains("indrive") || lower.contains("parkir") ||
-                       lower.contains("tol") || lower.contains("angkot") || lower.contains("kereta") ||
-                       lower.contains("krl") || lower.contains("mrt") || lower.contains("lrt") ||
-                       lower.contains("bus") || lower.contains("ongkir") || lower.contains("tambal ban")) {
-                currentCategory = "transport";
-                currentCategoryLabel = "Transportasi";
-            } else if (lower.contains("pulsa") || lower.contains("listrik") || lower.contains("token") ||
-                       lower.contains("wifi") || lower.contains("pdam") || lower.contains("air") ||
-                       lower.contains("bpjs") || lower.contains("kuota") || lower.contains("paket data") ||
-                       lower.contains("kos") || lower.contains("kost") || lower.contains("kontrakan") ||
-                       lower.contains("cicilan") || lower.contains("iuran")) {
+            // Order matches voice-parser.js: bills -> transport -> study -> health -> entertainment -> food -> shopping -> other
+            if (matchesAny(lower,
+                "listrik", "electricity", "token", "pln", "air", "pdam",
+                "wifi", "internet", "indihome", "biznet", "myrepublic", "first media",
+                "pulsa", "paket data", "kuota", "telkomsel", "indosat", "xl", "tri", "smartfren",
+                "bpjs", "asuransi", "premi", "sewa", "rent", "kos", "kost", "uang kos", "kontrakan", "apartment", "apartemen",
+                "cicilan", "iuran", "pbb", "pajak", "tagihan", "bills", "bill"
+            )) {
                 currentCategory = "bills";
                 currentCategoryLabel = "Tagihan";
-            } else if (lower.contains("bioskop") || lower.contains("nonton") || lower.contains("cinema") ||
-                       lower.contains("cgv") || lower.contains("xxi") || lower.contains("game") ||
-                       lower.contains("top up") || lower.contains("topup") || lower.contains("diamond") ||
-                       lower.contains("steam") || lower.contains("liburan") || lower.contains("karaoke") ||
-                       lower.contains("wisata") || lower.contains("pantai") || lower.contains("netflix") ||
-                       lower.contains("spotify")) {
+            } else if (matchesAny(lower,
+                "bensin", "pertalite", "pertamax", "solar", "diesel", "spbu", "shell", "fuel",
+                "gojek", "goride", "gocar", "grab", "grabike", "grabcar", "ojol", "ojek", "maxim", "indrive", "taksi", "taxi",
+                "parkir", "parking", "tol", "toll", "e-toll", "etoll", "angkot", "mikrolet", "minibus",
+                "bus", "transjakarta", "busway", "kereta", "krl", "commuter line", "mrt", "lrt", "train",
+                "pesawat", "tiket pesawat", "airport", "bandara",
+                "bengkel", "tambal ban", "service motor", "service mobil", "cuci motor", "cuci mobil", "ongkir"
+            )) {
+                currentCategory = "transport";
+                currentCategoryLabel = "Transport";
+            } else if (matchesAny(lower,
+                "buku", "beli buku", "ebook", "novel", "modul", "materi", "diktat", "buku tulis", "textbook", "book", "stationery",
+                "fotokopi", "print", "cetak", "printing", "photocopy",
+                "pensil", "pencil", "pulpen", "pen", "pena", "penghapus", "penggaris", "stabilo", "spidol", "binder", "kertas",
+                "les", "bimbel", "kursus", "tutoring", "privat", "kelas", "course", "workshop", "pelatihan", "training", "bootcamp", "seminar", "webinar", "sertifikasi",
+                "ai", "chatgpt", "openai", "gemini", "claude", "langganan ai", "tools ai", "aplikasi belajar",
+                "sekolah", "school", "kuliah", "college", "kampus", "campus", "university", "spp", "uang sekolah", "uang kuliah", "ukt", "tuition",
+                "ujian", "exam", "pendaftaran", "belajar", "study", "pendidikan", "education"
+            )) {
+                currentCategory = "study";
+                currentCategoryLabel = "Pendidikan";
+            } else if (matchesAny(lower,
+                "obat", "medicine", "resep dokter", "apotek", "apotik", "pharmacy",
+                "vitamin", "vitamins", "suplemen", "tablet", "kapsul", "sirup", "antibiotik", "jamu", "herbal",
+                "dokter", "doctor", "dokter gigi", "dentist", "klinik", "clinic", "rumah sakit", "hospital", "rs", "puskesmas",
+                "cek kesehatan", "check up", "medical check up", "tes darah", "vaksin", "vaccine",
+                "gym", "fitness", "workout", "yoga", "pilates", "lari", "sepeda", "renang", "badminton", "futsal",
+                "terapi", "konseling", "psikolog", "psikiater", "spa", "pijat", "massage", "refleksi", "salon", "barbershop", "potong rambut",
+                "kesehatan", "health"
+            )) {
+                currentCategory = "health";
+                currentCategoryLabel = "Kesehatan";
+            } else if (matchesAny(lower,
+                "bioskop", "nonton", "cinema", "cgv", "xxi", "movie", "film",
+                "netflix", "disney", "prime video", "spotify", "apple music", "youtube premium", "streaming",
+                "game", "gaming", "top up", "topup", "diamond", "uc", "voucher game", "gacha", "skin", "battle pass",
+                "steam", "playstation", "ps5", "ps4", "xbox", "nintendo", "switch", "mobile legends", "free fire", "pubg", "valorant",
+                "liburan", "holiday", "traveling", "travel", "wisata", "piknik", "staycation", "pantai", "gunung", "resort", "hotel", "villa", "dufan",
+                "karaoke", "party", "konser", "tiket konser", "hiburan"
+            )) {
                 currentCategory = "entertainment";
                 currentCategoryLabel = "Hiburan";
-            } else if (lower.contains("baju") || lower.contains("sepatu") || lower.contains("celana") ||
-                       lower.contains("kaos") || lower.contains("jaket") || lower.contains("tas") ||
-                       lower.contains("dompet") || lower.contains("sandal") || lower.contains("skincare") ||
-                       lower.contains("makeup") || lower.contains("kosmetik") || lower.contains("shopee") ||
-                       lower.contains("tokopedia") || lower.contains("lazada") || lower.contains("tiktok shop") ||
-                       lower.contains("mall") || lower.contains("belanja")) {
+            } else if (matchesAny(lower,
+                "makan", "minum", "sarapan", "lunch", "dinner", "breakfast", "jajan", "cemilan", "snack",
+                "roti", "bread", "kopi", "coffee", "ngopi", "teh", "tea", "es teh", "jus", "juice", "air mineral",
+                "bakso", "mie", "nasi", "nasi goreng", "mie goreng", "mie ayam", "ayam", "ayam goreng", "ayam bakar",
+                "sate", "soto", "rendang", "rawon", "pecel", "indomie", "warteg", "padang", "mcd", "mcdonalds", "kfc",
+                "burger", "pizza", "martabak", "gorengan", "es krim", "ice cream",
+                "cafe", "kafe", "resto", "restaurant", "warung", "warkop",
+                "sayur", "buah", "daging", "telur", "beras", "groceries", "belanja dapur"
+            )) {
+                currentCategory = "food";
+                currentCategoryLabel = "Makanan";
+            } else if (matchesAny(lower,
+                "baju", "pakaian", "clothes", "kaos", "kemeja", "celana", "jeans", "jaket", "hoodie", "sweater", "dress", "rok", "gamis", "hijab",
+                "sepatu", "shoes", "sneakers", "sandal", "tas", "bag", "backpack", "dompet", "wallet", "topi", "jam tangan", "kacamata",
+                "skincare", "sabun", "sampo", "shampoo", "pasta gigi", "parfum", "kosmetik", "makeup", "lipstick", "lotion", "sunscreen",
+                "belanja", "shopping", "mall", "supermarket", "tokopedia", "shopee", "lazada", "tiktok shop", "indomaret", "alfamart",
+                "hp", "handphone", "smartphone", "iphone", "android", "laptop", "macbook", "pc", "mouse", "keyboard", "headset", "earphone", "tws", "charger", "powerbank", "gadget"
+            )) {
                 currentCategory = "shopping";
                 currentCategoryLabel = "Belanja";
             } else {
-                currentCategory = "food";
-                currentCategoryLabel = "Makanan & Minuman";
+                currentCategory = "other";
+                currentCategoryLabel = "Lainnya";
             }
         }
 
