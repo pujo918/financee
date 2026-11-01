@@ -1,9 +1,14 @@
 package com.pujo.financee;
 
+import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
@@ -15,6 +20,33 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 1. Setup Notification Channel (Required for Android 8+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                "finance_notifications",
+                "Finance Tracker Notifications",
+                NotificationManager.IMPORTANCE_DEFAULT
+            );
+            channel.setDescription("Notifikasi dan pengingat transaksi keuangan");
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
+        }
+
+        // 2. Request Runtime Permissions (Audio & Notifications on Android 13+)
+        if (Build.VERSION.SDK_INT >= 33) {
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED ||
+                checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{
+                    Manifest.permission.POST_NOTIFICATIONS,
+                    Manifest.permission.RECORD_AUDIO
+                }, 1001);
+            }
+        } else if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 1001);
+        }
 
         if (bridge != null && bridge.getWebView() != null) {
             bridge.getWebView().addJavascriptInterface(new WidgetBridge(this), "AndroidWidget");

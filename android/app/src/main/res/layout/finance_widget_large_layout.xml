@@ -91,16 +91,31 @@
                     android:src="@drawable/ic_soundwave"
                     android:contentDescription="Soundwave" />
 
-                <ImageView
-                    android:id="@+id/widgetLargeMicGlow"
+                <FrameLayout
                     android:layout_width="44dp"
                     android:layout_height="44dp"
                     android:layout_marginStart="6dp"
-                    android:layout_marginEnd="6dp"
-                    android:background="@drawable/widget_glow_mic_cyan"
-                    android:padding="11dp"
-                    android:src="@drawable/ic_mic_widget"
-                    android:contentDescription="Voice Mic Button" />
+                    android:layout_marginEnd="6dp">
+
+                    <ImageView
+                        android:id="@+id/widgetLargeMicGlowCyan"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/widget_glow_mic_cyan"
+                        android:padding="11dp"
+                        android:src="@drawable/ic_mic_widget"
+                        android:contentDescription="Mic Cyan" />
+
+                    <ImageView
+                        android:id="@+id/widgetLargeMicGlowOrange"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/widget_glow_mic_orange"
+                        android:padding="11dp"
+                        android:src="@drawable/ic_mic_widget"
+                        android:visibility="gone"
+                        android:contentDescription="Mic Orange" />
+                </FrameLayout>
 
                 <ImageView
                     android:id="@+id/widgetSoundwaveRight"
@@ -124,15 +139,16 @@
                 android:textStyle="italic" />
         </LinearLayout>
 
-        <!-- Vertical Divider line -->
-        <View
+        <!-- Vertical Divider line (using ImageView for RemoteViews compatibility) -->
+        <ImageView
             android:layout_width="1dp"
             android:layout_height="match_parent"
             android:layout_marginStart="4dp"
             android:layout_marginEnd="8dp"
-            android:layout_marginTop="2dp"
-            android:layout_marginBottom="2dp"
-            android:background="#1e293b" />
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:background="#1e293b"
+            android:contentDescription="Divider" />
 
         <!-- Column 2: Transaction Details & Action Buttons -->
         <LinearLayout
